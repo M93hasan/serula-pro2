@@ -1,0 +1,29 @@
+{
+  "name": "serula-nesting-pro",
+  "version": "1.0.0",
+  "description": "Serula Nesting Pro - Web tabanlı DXF nesting ve malzeme optimizasyon uygulaması",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev:frontend",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "build": "npm run build:frontend",
+    "build:frontend": "npm --workspace frontend run build",
+    "test": "node --import ./tests/nesting/register.mjs tests/nesting/verify.mjs"
+  },
+  "author": {
+    "name": "Muhammet Hasanoğlu"
+  },
+  "license": "Proprietary",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  },
+  "dependencies": {
+    "firebase": "^12.19.0"
+  }
+}
