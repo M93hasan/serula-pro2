@@ -1,0 +1,8 @@
+node_modules/
+.firebase/
+.firebaserc
+database/
+dataconnect/
+storage/
+tests/
+00.dxf
