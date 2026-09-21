@@ -2,6 +2,7 @@
 import { calculateAbsoluteArea, pointInPolygon } from '../dxf/contourEngine';
 
 export type StartCorner = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
+export const ANY_ROTATIONS = Array.from({ length: 72 }, (_, index) => index * 5);
 export interface NestingSettings {
   materialType: 'sheet' | 'roll';
   sheetWidth: number; sheetHeight: number; rollWidth: number;
@@ -19,7 +20,7 @@ export interface NestingResult {
 }
 export const DEFAULT_NESTING_SETTINGS: NestingSettings = {
   materialType: 'sheet', sheetWidth: 1400, sheetHeight: 1000, rollWidth: 1400,
-  margin: 5, spacing: 0.3, rotations: [0, 90, 180, 270], startCorner: 'bottom-left',
+  margin: 1, spacing: 0.3, rotations: [0, 90], startCorner: 'bottom-right',
 };
 export type NestingPolygon = { points: DxfPoint[]; width: number; height: number };
 type Polygon = NestingPolygon;
@@ -30,24 +31,43 @@ function rotate(p: DxfPoint, rotation: number): DxfPoint {
     case 90: return { x: -p.y, y: p.x };
     case 180: return { x: -p.x, y: -p.y };
     case 270: return { x: p.y, y: -p.x };
-    default: return { x: p.x, y: p.y };
+    case 0: return { x: p.x, y: p.y };
+    default: {
+      const radians = rotation * Math.PI / 180;
+      const cos = Math.cos(radians), sin = Math.sin(radians);
+      return { x: p.x * cos - p.y * sin, y: p.x * sin + p.y * cos };
+    }
   }
+}
+const rotatedBoundsCache = new WeakMap<NestingPart, Map<number, { minX: number; minY: number; width: number; height: number }>>();
+function rotatedBounds(part: NestingPart, rotation: number) {
+  let cache = rotatedBoundsCache.get(part);
+  if (!cache) { cache = new Map(); rotatedBoundsCache.set(part, cache); }
+  const cached = cache.get(rotation);
+  if (cached) return cached;
+  const { width, height } = part.bounds;
+  const corners = [{x:0,y:0},{x:width,y:0},{x:width,y:height},{x:0,y:height}].map(p => rotate(p, rotation));
+  const minX = Math.min(...corners.map(p => p.x)), minY = Math.min(...corners.map(p => p.y));
+  const result = { minX, minY, width: Math.max(...corners.map(p => p.x)) - minX, height: Math.max(...corners.map(p => p.y)) - minY };
+  cache.set(rotation, result);
+  return result;
 }
 export function transformNestingPoint(point: DxfPoint, part: NestingPart, placement: NestingPlacement): DxfPoint {
   const local = rotate({ x: point.x - part.bounds.minX, y: point.y - part.bounds.minY }, placement.rotation);
-  const { width, height } = part.bounds;
+  const bounds = rotatedBounds(part, placement.rotation);
   return {
-    x: local.x + placement.x + (placement.rotation === 90 ? height : placement.rotation === 180 ? width : 0),
-    y: local.y + placement.y + (placement.rotation === 180 ? height : placement.rotation === 270 ? width : 0),
+    x: local.x - bounds.minX + placement.x,
+    y: local.y - bounds.minY + placement.y,
   };
 }
 export function polygon(part: NestingPart, rotation: number): Polygon {
+  const bounds = rotatedBounds(part, rotation);
   return {
     points: part.outerContour.points.map(p => transformNestingPoint(p, part, {
       partId: part.id, instanceId: '', x: 0, y: 0, rotation, placed: true,
     })),
-    width: rotation % 180 ? part.bounds.height : part.bounds.width,
-    height: rotation % 180 ? part.bounds.width : part.bounds.height,
+    width: bounds.width,
+    height: bounds.height,
   };
 }
 function cross(a: DxfPoint, b: DxfPoint, c: DxfPoint): number {
@@ -121,7 +141,7 @@ export function validateSettings(settings: NestingSettings): void {
     if (!Number.isFinite(value) || value <= 0) throw new Error('Malzeme ölçüleri pozitif olmalı.');
   }
   if (![settings.margin, settings.spacing].every(v => Number.isFinite(v) && v >= 0)) throw new Error('Aralık ve kenar payı negatif olamaz.');
-  if (!settings.rotations.length || settings.rotations.some(r => ![0, 90, 180, 270].includes(r))) throw new Error('Geçerli bir dönüş açısı seçin.');
+  if (!settings.rotations.length || settings.rotations.some(r => !Number.isFinite(r) || r < 0 || r >= 360)) throw new Error('Geçerli bir dönüş açısı seçin.');
   if ((settings.materialType === 'roll' ? settings.rollWidth : settings.sheetWidth) <= 2 * settings.margin || settings.sheetHeight <= 2 * settings.margin) throw new Error('Kenar payı malzeme ölçüsünden büyük.');
 }
 // Ordering is explicit: strategies never overwrite the actual contour area.
@@ -155,13 +175,12 @@ export function runNesting(parts: NestingPart[], settings: NestingSettings = DEF
       let shape = cache.get(key);
       if (!shape) {
         shape = polygon(part, rotation);
-        shape.points = shape.points.map(p => ({ x: fromRight ? shape!.width - p.x : p.x, y: fromTop ? shape!.height - p.y : p.y }));
         cache.set(key, shape);
       }
       if (shape.width > width - 2 * settings.margin || shape.height > height - 2 * settings.margin) continue;
       const gap = settings.spacing + 1e-6;
       const xs = new Set([settings.margin, width - settings.margin - shape.width]);
-      const ys = new Set([settings.margin]);
+      const ys = new Set([settings.margin, height - settings.margin - shape.height]);
       if (options.searchStep) {
         for (let x = settings.margin; x <= width - settings.margin - shape.width; x += options.searchStep) xs.add(x);
       }
@@ -171,8 +190,8 @@ export function runNesting(parts: NestingPart[], settings: NestingSettings = DEF
       }
       let candidate: { x: number; y: number } | undefined;
       const candidates: { x: number; y: number }[] = [];
-      for (const y of [...ys].filter(y => y >= settings.margin && y <= height - settings.margin - shape.height).sort((a, b) => a - b)) {
-        for (const x of [...xs].filter(x => x >= settings.margin && x <= width - settings.margin - shape.width).sort((a, b) => a - b)) {
+      for (const y of [...ys].filter(y => y >= settings.margin && y <= height - settings.margin - shape.height).sort((a, b) => fromTop ? b - a : a - b)) {
+        for (const x of [...xs].filter(x => x >= settings.margin && x <= width - settings.margin - shape.width).sort((a, b) => fromRight ? b - a : a - b)) {
           if (fits(shape, x, y, placed, width, height, settings)) {
             candidates.push({ x, y });
             if (candidates.length >= (options.candidateLimit ?? 1)) break;
@@ -187,10 +206,10 @@ export function runNesting(parts: NestingPart[], settings: NestingSettings = DEF
             while (fits(shape, position.x - step, position.y, placed, width, height, settings)) position.x -= step;
           }
         }
-        if (!candidate || position.y < candidate.y - EPS || (Math.abs(position.y - candidate.y) < EPS && position.x < candidate.x)) candidate = position;
+        if (!candidate || (fromTop ? position.y > candidate.y + EPS : position.y < candidate.y - EPS) || (Math.abs(position.y - candidate.y) < EPS && (fromRight ? position.x > candidate.x : position.x < candidate.x))) candidate = position;
       }
       if (!candidate) continue;
-      const score = Math.max(usedHeight, candidate.y + shape.height) * width + candidate.y + candidate.x / width;
+      const score = (fromTop ? height - candidate.y : candidate.y + shape.height) * width + (fromRight ? width - candidate.x : candidate.x) / width;
       if (!best || score < best.score) best = { ...candidate, shape, rotation, score };
     }
     if (!best) { placements.push({ partId: part.id, instanceId, placed: false, x: 0, y: 0, rotation: 0 }); continue; }
@@ -202,11 +221,6 @@ export function runNesting(parts: NestingPart[], settings: NestingSettings = DEF
   }
   const materialHeight = settings.materialType === 'roll' ? usedHeight + settings.margin : height;
   const materialArea = width * materialHeight;
-  for (const p of placements) if (p.placed) {
-    const shape = cache.get(`${p.partId}:${p.rotation}`)!;
-    if (fromRight) p.x = width - p.x - shape.width;
-    if (fromTop) p.y = materialHeight - p.y - shape.height;
-  }
   return { placements, placedCount: placed.length, unplacedCount: instances.length - placed.length, totalCount: instances.length,
     usedWidth, usedHeight, usedArea, materialWidth: width, materialHeight, materialArea,
     efficiency: materialArea ? usedArea / materialArea * 100 : 0, margin: settings.margin };

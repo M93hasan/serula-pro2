@@ -41,12 +41,25 @@ export function prepareExport(result: NestingResult, parts: NestingPart[], curve
 export function createDxfExport(items: ExportCurve[]): string {
   const lines: string[] = [];
   const add = (code: number, value: string | number) => lines.push(String(code), typeof value === 'number' ? number(value) : value.replace(/[\r\n]/g, ' '));
+  let nextHandle = 0x100;
+  const handle = () => add(5, (nextHandle++).toString(16).toUpperCase());
   const point = (code: number, p: DxfPoint) => { add(code, p.x); add(code + 10, p.y); add(code + 20, 0); };
-  add(0,'SECTION'); add(2,'HEADER'); add(9,'$ACADVER'); add(1,'AC1027'); add(9,'$INSUNITS'); add(70,4); add(0,'ENDSEC');
-  add(0,'SECTION'); add(2,'TABLES'); add(0,'TABLE'); add(2,'LAYER');
+  const points = items.flatMap(({ curve, part, placement }) => curve.points.map(p => transformNestingPoint(p, part, placement)));
+  const bounds = points.reduce((box, p) => ({ minX: Math.min(box.minX,p.x), minY: Math.min(box.minY,p.y), maxX: Math.max(box.maxX,p.x), maxY: Math.max(box.maxY,p.y) }), {minX:Infinity,minY:Infinity,maxX:-Infinity,maxY:-Infinity});
+  const minX = points.length ? bounds.minX : 0, minY = points.length ? bounds.minY : 0;
+  const maxX = points.length ? bounds.maxX : 0, maxY = points.length ? bounds.maxY : 0;
+  add(0,'SECTION'); add(2,'HEADER'); add(9,'$ACADVER'); add(1,'AC1018');
+  add(9,'$INSUNITS'); add(70,4); add(9,'$MEASUREMENT'); add(70,1);
+  add(9,'$LUNITS'); add(70,2); add(9,'$LUPREC'); add(70,4);
+  add(9,'$EXTMIN'); point(10,{x:minX,y:minY}); add(9,'$EXTMAX'); point(10,{x:maxX,y:maxY});
+  add(9,'$LIMMIN'); add(10,minX); add(20,minY); add(9,'$LIMMAX'); add(10,maxX); add(20,maxY);
+  add(0,'ENDSEC');
+  add(0,'SECTION'); add(2,'TABLES');
+  add(0,'TABLE'); add(2,'LTYPE'); handle(); add(70,1); add(0,'LTYPE'); handle(); add(100,'AcDbSymbolTableRecord'); add(100,'AcDbLinetypeTableRecord'); add(2,'CONTINUOUS'); add(70,0); add(3,'Solid line'); add(72,65); add(73,0); add(40,0); add(0,'ENDTAB');
+  add(0,'TABLE'); add(2,'LAYER'); handle();
   const layers = [...new Set(items.map(item => item.entity.layer || '0'))]; add(70,layers.length);
-  for (const layer of layers) { add(0,'LAYER'); add(100,'AcDbSymbolTableRecord'); add(100,'AcDbLayerTableRecord'); add(2,layer); add(70,0); add(62,7); add(6,'CONTINUOUS'); }
-  add(0,'ENDTAB'); add(0,'ENDSEC'); add(0,'SECTION'); add(2,'ENTITIES');
+  for (const layer of layers) { add(0,'LAYER'); handle(); add(100,'AcDbSymbolTableRecord'); add(100,'AcDbLayerTableRecord'); add(2,layer); add(70,0); add(62,7); add(6,'CONTINUOUS'); }
+  add(0,'ENDTAB'); add(0,'ENDSEC'); add(0,'SECTION'); add(2,'BLOCKS'); add(0,'ENDSEC'); add(0,'SECTION'); add(2,'ENTITIES');
   for (const { entity:e, part, placement, curve } of items) {
     const type = e.type === 'POLYLINE' ? 'LWPOLYLINE' : e.type;
     const transform = (p: DxfPoint) => transformNestingPoint(p, part, placement);
@@ -54,7 +67,7 @@ export function createDxfExport(items: ExportCurve[]): string {
       const origin = transform({x:0,y:0}), end = transform(p);
       return { x:end.x-origin.x, y:end.y-origin.y };
     };
-    add(0,type); add(100,'AcDbEntity'); add(8,e.layer || '0');
+    add(0,type); handle(); add(100,'AcDbEntity'); add(8,e.layer || '0');
     if (e.color.aci && e.color.aci > 0 && e.color.aci < 256) add(62,e.color.aci);
     if (e.color.hex && /^#[0-9a-f]{6}$/i.test(e.color.hex)) add(420,parseInt(e.color.hex.slice(1),16));
     switch (type) {
@@ -101,11 +114,12 @@ export function createSvgExport(items: ExportCurve[], result: NestingResult): st
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${number(result.materialWidth)}mm" height="${number(result.materialHeight)}mm" viewBox="0 0 ${number(result.materialWidth)} ${number(result.materialHeight)}"><g transform="translate(0 ${number(result.materialHeight)}) scale(1 -1)">${paths.join('')}</g></svg>`;
 }
 
-export function exportLayout(format: 'dxf'|'svg'|'json', result: NestingResult, parts: NestingPart[], curves: SerulaCurve[], owners: Map<string,string>, entities: SerulaDxfEntity[], transforms: Record<string,DxfPoint>, settings: NestingSettings): void {
+export function exportLayout(format: 'dxf'|'svg'|'json', result: NestingResult, parts: NestingPart[], curves: SerulaCurve[], owners: Map<string,string>, entities: SerulaDxfEntity[], transforms: Record<string,DxfPoint>, settings: NestingSettings, originalName = 'serula'): void {
   const prepared=prepareExport(result,parts,curves,owners,entities,transforms,settings);
   const content=format === 'dxf' ? createDxfExport(prepared.curves) : format === 'svg' ? createSvgExport(prepared.curves,prepared.result) : JSON.stringify({ units:'mm',settings,result:prepared.result,parts:parts.map(p => ({id:p.id,name:p.name})) },null,2);
   const mime={dxf:'application/dxf',svg:'image/svg+xml',json:'application/json'}[format];
   const url=URL.createObjectURL(new Blob([content],{type:mime}));
-  const link=document.createElement('a'); link.href=url; link.download=`serula-nesting.${format}`; document.body.append(link); link.click(); link.remove();
+  const baseName = originalName.replace(/\.[^.]+$/, '').replace(/[\\/:*?"<>|]/g, '_').trim() || 'serula';
+  const link=document.createElement('a'); link.href=url; link.download=`${baseName} nesting.${format}`; document.body.append(link); link.click(); link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url),10000);
 }

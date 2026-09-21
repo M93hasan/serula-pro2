@@ -1,5 +1,5 @@
 import type { NestingPart } from './dxfTypes';
-import type { NestingSettings } from '../nesting/nestingEngine';
+import { ANY_ROTATIONS, type NestingSettings } from '../nesting/nestingEngine';
 import './NestingControls.css';
 
 export type WorkspacePanel = 'settings' | 'parts' | 'export';
@@ -10,8 +10,9 @@ type Props = {
   autoSimulation: boolean; onAutoSimulation: (value: boolean) => void;
   parts: NestingPart[]; quantities: Record<string, number>; onQuantity: (id: string, value: number) => void;
   onAllQuantities: (value: number) => void; busy: boolean; canExport: boolean;
+  onFull: (id: string) => void;
   unplacedCount: number;
-  onExport: (format: 'dxf' | 'svg' | 'json') => void;
+  onExport: (format: 'dxf') => void;
 };
 
 export default function NestingControls(props: Props) {
@@ -22,11 +23,10 @@ export default function NestingControls(props: Props) {
       onChange={event => props.onSettings({ ...settings, [key]: Number(event.target.value) })} /><span>mm</span></div>
   </label>;
   return <section className="nesting-controls" id="workspace-controls">
-    <header className="controls-heading"><div><span className="section-kicker">ÜRETİM HAZIRLIĞI</span><h2>Yerleşim çalışma alanı</h2></div>
-      <span className="job-badge"><i />{total} parça hazır</span></header>
+    <header className="controls-heading"><h2>Yerleşim</h2><span className="job-badge">{total} parça</span></header>
     <div className="controls-tabs" role="tablist" aria-label="Çalışma alanı">
       {(['settings', 'parts', 'export'] as const).map(tab => <button key={tab} type="button" role="tab" id={`tab-${tab}`} aria-controls={`panel-${tab}`} aria-selected={panel === tab} onClick={() => props.onPanel(tab)}>
-        {tab === 'settings' ? '⚙  Yerleşim ayarları' : tab === 'parts' ? `▱  Parçalar · ${total}` : '↗  Dışa aktar'}
+        {tab === 'settings' ? '⚙  Yerleşim ayarları' : tab === 'parts' ? `▱  Parçalar · ${total}` : 'DXF Kaydet'}
       </button>)}
     </div>
     <div role="tabpanel" id={`panel-${panel}`} aria-labelledby={`tab-${panel}`}>
@@ -43,9 +43,9 @@ export default function NestingControls(props: Props) {
         <div className="settings-footer"><div className="rotation-group"><span id="rotation-label">İzin verilen dönüşler</span><div role="radiogroup" aria-labelledby="rotation-label">{[
           { label: '0°', angles: [0], hint: 'Yalnızca 0°; yön değişmez' },
           { label: '0°–90°', angles: [0, 90], hint: '0° veya 90°' },
-          { label: 'Any', angles: [0, 90, 180, 270], hint: '0°, 90°, 180° veya 270°' },
+          { label: 'Any', angles: ANY_ROTATIONS, hint: 'Serbest açılı döndürme (5° adımlarla)' },
         ].map(mode => <label key={mode.label} title={mode.hint} className={settings.rotations.length === mode.angles.length ? 'rotation-chip selected' : 'rotation-chip'}>
-          <input name="rotation-mode" aria-label={mode.label} type="radio" checked={settings.rotations.length === mode.angles.length} onChange={() => props.onSettings({ ...settings, rotations: [...mode.angles] })} />{mode.label}</label>)}</div><small className="rotation-description">{settings.rotations.length === 4 ? 'Any: 0°, 90°, 180° ve 270°' : settings.rotations.length === 2 ? 'Yalnızca 0° ve 90°' : 'Parçanın yönü korunur'}</small></div>
+          <input name="rotation-mode" aria-label={mode.label} type="radio" checked={settings.rotations.length === mode.angles.length} onChange={() => props.onSettings({ ...settings, rotations: [...mode.angles] })} />{mode.label}</label>)}</div><small className="rotation-description">{settings.rotations.length === ANY_ROTATIONS.length ? 'Serbest açılı döndürme (5° adımlarla)' : settings.rotations.length === 2 ? 'Yalnızca 0° ve 90°' : 'Parçalar döndürülmez'}</small></div>
           <label className="simulation-switch"><input type="checkbox" checked={props.autoSimulation} onChange={e => props.onAutoSimulation(e.target.checked)} /><span><strong>Yerleşimi adım adım göster</strong><small>Hesaplama sonrası otomatik simülasyon</small></span></label>
         </div>
       </fieldset>}
@@ -56,18 +56,13 @@ export default function NestingControls(props: Props) {
           return <article className={`part-card ${quantity === 0 ? 'excluded' : ''}`} key={part.id}>
             <div className="part-thumbnail"><svg viewBox={`${minX-8} ${minY-8} ${width+16} ${height+16}`} aria-label={`P${index+1} önizleme`}><polygon points={part.outerContour.points.map(p => `${p.x},${p.y}`).join(' ')} fill="#e8eefc" stroke="#5174b9" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg></div>
             <div className="part-card-info"><strong>P{index+1}</strong><small>{width.toFixed(1)} × {height.toFixed(1)} mm</small><span>{quantity === 0 ? 'Yerleşim dışında' : `${quantity} adet`}</span></div>
+            <button className="full-button" disabled={props.busy} onClick={() => props.onFull(part.id)}>Full · Plakayı doldur</button>
             <div className="quantity-stepper"><button aria-label={`P${index+1} azalt`} disabled={props.busy || quantity === 0} onClick={() => props.onQuantity(part.id, quantity-1)}>−</button>
-              <input aria-label={`P${index+1} adet`} type="number" min="0" max="100" value={quantity} disabled={props.busy} onChange={e => { const value=Number(e.target.value); if (Number.isInteger(value) && value>=0 && value<=100) props.onQuantity(part.id,value); }} />
-              <button aria-label={`P${index+1} artır`} disabled={props.busy || quantity === 100} onClick={() => props.onQuantity(part.id,quantity+1)}>+</button></div>
+              <input aria-label={`P${index+1} adet`} type="number" min="0" max="1000" value={quantity} disabled={props.busy} onChange={e => { const value=Number(e.target.value); if (Number.isInteger(value) && value>=0 && value<=1000) props.onQuantity(part.id,value); }} />
+              <button aria-label={`P${index+1} artır`} disabled={props.busy || quantity === 1000} onClick={() => props.onQuantity(part.id,quantity+1)}>+</button></div>
           </article>;
         })}</div></div>}
-      {panel === 'export' && <div className="export-body"><div className="panel-description"><div><h3>Yerleşimi dışa aktar</h3><p>{props.canExport ? props.unplacedCount ? `${props.unplacedCount} parça yerleşemedi. Dosyaya yalnızca yerleşen parçalar dahil edilir.` : 'Tam yerleşim ve tüm parça kopyaları dosyaya dahil edilir.' : 'Dışa aktarmak için önce bir yerleşim hesaplayın.'}</p></div><span className="format-unit">Ölçü birimi: mm</span></div>
-        <div className="export-grid">{([
-          ['dxf','DXF','Kesim ve CAD','Spline, yay, renk ve katmanlar korunur.'],
-          ['svg','SVG','Vektörel önizleme','Ölçekli yerleşimi paylaşın veya yazdırın.'],
-          ['json','JSON','Yerleşim verisi','Parça konumları, dönüşler ve sonuç özeti.'],
-        ] as const).map(([format, title, subtitle, description]) => <button className="export-card" key={format} disabled={!props.canExport || props.busy} onClick={() => props.onExport(format)}><span className="format-icon">{title}</span><strong>{subtitle}</strong><small>{description}</small><span className="download-label">Dosyayı indir ↓</span></button>)}</div>
-      </div>}
+      {panel === 'export' && <div className="export-body"><p>{props.canExport ? 'Yerleşimi DXF olarak indirin.' : 'Önce yerleşimi hesaplayın.'}</p><button className="export-primary" disabled={!props.canExport || props.busy} onClick={() => props.onExport('dxf')}>↓ DXF Kaydet</button></div>}
     </div>
   </section>;
 }

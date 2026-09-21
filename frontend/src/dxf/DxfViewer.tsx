@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import type {
+  DxfPoint,
   GeometryBounds,
   NestingPart,
   SerulaCurve,
@@ -52,8 +53,12 @@ import { exportLayout } from "./nestingExport";
 
 type DxfViewerProps = {
   entities: SerulaDxfEntity[];
+  fileName: string;
+  savedLayout?: SavedLayout | null;
+  onCloudSave?: (layout: SavedLayout) => Promise<void>;
   navigation?: { panel: WorkspacePanel | "viewer"; token: number };
 };
+export type SavedLayout = { settings: NestingSettings; spacing: number; quantities: Record<string, number>; result: NestingResult | null; transforms: Record<string, DxfPoint> };
 
 type ViewState = {
   scale: number;
@@ -187,7 +192,7 @@ function createFitView(
 ========================================================= */
 
 export default function DxfViewer({
-  entities, navigation,
+  entities, navigation, fileName, savedLayout, onCloudSave,
 }: DxfViewerProps) {
   const canvasRef =
     useRef<HTMLCanvasElement>(
@@ -209,12 +214,14 @@ export default function DxfViewer({
     useState<string | null>(null);
 
   const [partSpacing, setPartSpacing] =
-    useState(0.3);
-  const [operatorSettings, setOperatorSettings] = useState<NestingSettings>({ ...DEFAULT_NESTING_SETTINGS });
+    useState(savedLayout?.spacing ?? 0.3);
+  const [operatorSettings, setOperatorSettings] = useState<NestingSettings>(savedLayout?.settings ?? { ...DEFAULT_NESTING_SETTINGS });
   const [workerGeneration, setWorkerGeneration] = useState(0);
   const [autoSimulation, setAutoSimulation] = useState(true);
   const [panel, setPanel] = useState<WorkspacePanel>("settings");
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>(savedLayout?.quantities ?? {});
+  const previousEntities = useRef(entities);
+  const previousSettings = useRef({ operatorSettings, partSpacing, quantities });
   useEffect(() => {
     if (!navigation?.token) return;
     if (navigation.panel === "viewer") canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -236,7 +243,7 @@ export default function DxfViewer({
       string,
       PartTransform
     >
-  >({});
+  >(savedLayout?.transforms ?? {});
 
   const [
     selectedPartId,
@@ -262,7 +269,7 @@ export default function DxfViewer({
     setNestingResult,
   ] = useState<
     NestingResult | null
-  >(null);
+  >(savedLayout?.result ?? null);
 
   /* =======================================================
      SIMULATION STATE
@@ -271,7 +278,7 @@ export default function DxfViewer({
   const [
     visiblePlacementCount,
     setVisiblePlacementCount,
-  ] = useState(0);
+  ] = useState(savedLayout?.result?.placedCount ?? 0);
 
   const [
     isSimulating,
@@ -305,6 +312,18 @@ export default function DxfViewer({
   const contours = useMemo(() => detectContours(sourceCurves), [sourceCurves]);
   const catalogue = useMemo(() => createPartsFromContours(contours), [contours]);
   const { parts, curves, curvePartMap } = useMemo(() => createJobGeometry(catalogue, sourceCurves, quantities), [catalogue, sourceCurves, quantities]);
+  useEffect(() => {
+    const onDelete = (event: KeyboardEvent) => {
+      if (event.key !== 'Delete' || !selectedPartId) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.closest('input, textarea, select, [contenteditable="true"]') || target.isContentEditable)) return;
+      event.preventDefault();
+      setQuantities(current => ({ ...current, [selectedPartId]: 0 }));
+      setSelectedPartId(null);
+    };
+    window.addEventListener('keydown', onDelete);
+    return () => window.removeEventListener('keydown', onDelete);
+  }, [selectedPartId]);
 
   /* =======================================================
      PART MAP
@@ -389,7 +408,7 @@ export default function DxfViewer({
       { type: "module" },
     );
     } catch (error) {
-      setNestingError(error instanceof Error ? error.message : "Worker başlatılamadı.");
+      setNestingError(error instanceof Error ? error.message : "Yerleşim işlemi başlatılamadı.");
       setIsNesting(false);
       return;
     }
@@ -423,12 +442,12 @@ export default function DxfViewer({
       setIsNesting(false);
       setNestingError(
         event.message ||
-          "Nesting Worker çalışırken bir hata oluştu.",
+          "Yerleşim hesaplanırken bir hata oluştu.",
       );
     };
     worker.onmessageerror = () => {
       setIsNesting(false);
-      setNestingError("Worker sonucu okunamadı. Yeniden deneyin.");
+      setNestingError("Yerleşim sonucu okunamadı. Yeniden deneyin.");
     };
 
     return () => {
@@ -444,6 +463,8 @@ export default function DxfViewer({
   ======================================================= */
 
   useEffect(() => {
+    if (previousEntities.current === entities) return;
+    previousEntities.current = entities;
     setTransforms({});
 
     setSelectedPartId(
@@ -478,6 +499,9 @@ export default function DxfViewer({
   ======================================================= */
 
   useEffect(() => {
+    const previous = previousSettings.current;
+    if (previous.operatorSettings === operatorSettings && previous.partSpacing === partSpacing && previous.quantities === quantities) return;
+    previousSettings.current = { operatorSettings, partSpacing, quantities };
     setNestingResult(null); setVisiblePlacementCount(0); setIsSimulating(false);
     setIsSimulationPaused(false); setTransforms({}); setSelectedPartId(null); setNestingError(null);
   }, [operatorSettings, partSpacing, quantities]);
@@ -1018,27 +1042,6 @@ export default function DxfViewer({
         );
 
         ctx.setLineDash([]);
-
-        ctx.restore();
-
-        ctx.save();
-
-        ctx.font =
-          "600 13px Arial";
-
-        ctx.fillStyle =
-          "rgba(0,0,0,0.55)";
-
-        ctx.fillText(
-          `${nestingResult.materialWidth.toFixed(
-            0,
-          )} × ${nestingResult.materialHeight.toFixed(
-            0,
-          )} mm`,
-
-          bottomLeft.x + 10,
-          topRight.y + 22,
-        );
 
         ctx.restore();
       },
@@ -1738,7 +1741,7 @@ export default function DxfViewer({
   ======================================================= */
 
   const handleAutoNesting =
-    () => {
+    (requestedParts: NestingPart[] = parts) => {
       const worker =
         nestingWorkerRef.current;
 
@@ -1754,7 +1757,7 @@ export default function DxfViewer({
 
       const request: NestingWorkerRequest = {
         type: "RUN_NESTING",
-        parts,
+        parts: requestedParts,
         settings: {
           ...operatorSettings,
           spacing: partSpacing,
@@ -1765,7 +1768,7 @@ export default function DxfViewer({
         worker.postMessage(request);
       } catch (error) {
         setIsNesting(false);
-        setNestingError(error instanceof Error ? error.message : "Nesting başlatılamadı.");
+        setNestingError(error instanceof Error ? error.message : "Yerleşim başlatılamadı.");
       }
     };
 
@@ -1937,9 +1940,24 @@ export default function DxfViewer({
         spacing={partSpacing} onSpacing={setPartSpacing} autoSimulation={autoSimulation} onAutoSimulation={setAutoSimulation}
         parts={catalogue} quantities={quantities} onQuantity={(id, value) => setQuantities(current => ({ ...current, [id]: value }))}
         onAllQuantities={value => setQuantities(Object.fromEntries(catalogue.map(part => [part.id, value])))} busy={isNesting}
+        onFull={id => {
+          const selected = catalogue.find(part => part.id === id);
+          if (!selected || operatorSettings.materialType !== 'sheet') return;
+          const usableWidth = operatorSettings.sheetWidth - 2 * operatorSettings.margin;
+          const usableHeight = operatorSettings.sheetHeight - 2 * operatorSettings.margin;
+          const pitchWidth = selected.bounds.width + partSpacing;
+          const pitchHeight = selected.bounds.height + partSpacing;
+          const estimate = Math.min(1000, Math.max(1, Math.max(
+            Math.floor((usableWidth + partSpacing) / pitchWidth) * Math.floor((usableHeight + partSpacing) / pitchHeight),
+            Math.floor((usableWidth + partSpacing) / pitchHeight) * Math.floor((usableHeight + partSpacing) / pitchWidth),
+          )));
+          const nextQuantities = Object.fromEntries(catalogue.map(part => [part.id, part.id === id ? estimate : 0]));
+          setQuantities(nextQuantities);
+          handleAutoNesting(createJobGeometry(catalogue, sourceCurves, nextQuantities).parts);
+        }}
         canExport={Boolean(nestingResult?.placedCount)} unplacedCount={nestingResult?.unplacedCount ?? 0} onExport={format => {
           if (!nestingResult) return;
-          try { exportLayout(format, nestingResult, parts, curves, curvePartMap, entities, transforms, { ...operatorSettings, spacing: partSpacing }); setNestingError(null); }
+          try { exportLayout(format, nestingResult, parts, curves, curvePartMap, entities, transforms, { ...operatorSettings, spacing: partSpacing }, fileName); setNestingError(null); }
           catch (error) { setNestingError(error instanceof Error ? error.message : "Dışa aktarma başarısız."); }
         }} />
       {isNesting && <button type="button" onClick={handleResetNesting}>Hesaplamayı iptal et</button>}
@@ -1987,7 +2005,7 @@ export default function DxfViewer({
           <button
             type="button"
             onClick={
-              handleAutoNesting
+              () => handleAutoNesting()
             }
             disabled={isNesting || parts.length === 0}
             style={{
@@ -1998,10 +2016,18 @@ export default function DxfViewer({
           >
             {isNesting
               ? "Hesaplanıyor…"
-              : "◫ Otomatik Nesting"}
+              : "◫ Otomatik Yerleşim"}
           </button>
 
 
+
+          {nestingResult && (
+            <button type="button" className="quick-export" disabled={isNesting} onClick={() => {
+              try { exportLayout('dxf', nestingResult, parts, curves, curvePartMap, entities, transforms, { ...operatorSettings, spacing: partSpacing }, fileName); setNestingError(null); }
+              catch (error) { setNestingError(error instanceof Error ? error.message : 'Dışa aktarma başarısız.'); }
+            }}>↓ DXF Kaydet</button>
+          )}
+          {onCloudSave && <button type="button" disabled={isNesting} onClick={() => void onCloudSave({ settings: operatorSettings, spacing: partSpacing, quantities, result: nestingResult, transforms })}>Buluta Kaydet</button>}
 
           {nestingResult && (
             <>
@@ -2059,7 +2085,7 @@ export default function DxfViewer({
                   toolbarButtonStyle
                 }
               >
-                Nesting Sıfırla
+                Yerleşimi Sıfırla
               </button>
             </>
           )}
@@ -2172,21 +2198,7 @@ export default function DxfViewer({
           />
 
           <Statistic
-            label="Renk"
-            value={
-              curveStatistics.colors
-            }
-          />
-
-          <Statistic
-            label="Layer"
-            value={
-              curveStatistics.layers
-            }
-          />
-
-          <Statistic
-            label="Zoom"
+            label="Yakınlaştırma"
             value={`${Math.round(
               view.scale *
                 100,
@@ -2206,7 +2218,7 @@ export default function DxfViewer({
             fontWeight: 600,
           }}
         >
-          Nesting hatası: {nestingError}
+          Yerleşim hatası: {nestingError}
         </div>
       )}
 
@@ -2242,7 +2254,7 @@ export default function DxfViewer({
                 }}
               >
                 {simulationFinished
-                  ? "✓ Nesting tamamlandı"
+                  ? "✓ Yerleşim tamamlandı"
                   : isSimulationPaused
                     ? "Simülasyon duraklatıldı"
                     : `Yerleştiriliyor: ${visiblePlacementCount} / ${simulationTotal}`}
@@ -2320,6 +2332,10 @@ export default function DxfViewer({
 
       {/* CANVAS */}
 
+      <div className="viewer-canvas-frame">
+        <div className="viewer-dimensions" aria-label="Malzeme ölçüleri">
+          {operatorSettings.materialType === 'roll' ? `Rulo: ${operatorSettings.rollWidth} mm` : `Plaka: ${operatorSettings.sheetWidth} × ${operatorSettings.sheetHeight} mm`}
+        </div>
       <canvas
         ref={
           canvasRef
@@ -2375,6 +2391,7 @@ export default function DxfViewer({
             "none",
         }}
       />
+      </div>
     </div>
   );
 }

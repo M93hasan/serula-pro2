@@ -14,7 +14,7 @@ const entities=[
 ].map(e=>({...e,layer:'CUT',color}));
 const curves=createCurvesFromEntities(entities);
 const part={id:'part',bounds:{minX:-20,minY:-20,maxX:20,maxY:20,width:40,height:40}};
-for(const rotation of [0,90,180,270]){
+for(const rotation of [0,45,90,180,270]){
  const placement={partId:'part',instanceId:'part-0',placed:true,x:50,y:50,rotation};
  const items=entities.map((entity,i)=>({entity,part,placement,curve:curves[i]}));
  const text=createDxfExport(items),parsed=new DxfParser().parseSync(text);
@@ -27,4 +27,4 @@ for(const rotation of [0,90,180,270]){
    for(let j=0;j<curves[i].points.length;j++){const p=transformNestingPoint(curves[i].points[j],part,placement),q=restored[i].points[j];assert(Math.hypot(p.x-q.x,p.y-q.y)<1e-6,entities[i].type+' rotation '+rotation);}
  }
 }
-console.log('PASS native LINE/ARC/CIRCLE/ELLIPSE/bulged POLYLINE export at 0/90/180/270 degrees.');
+console.log('PASS native LINE/ARC/CIRCLE/ELLIPSE/bulged POLYLINE export at 0/45/90/180/270 degrees.');

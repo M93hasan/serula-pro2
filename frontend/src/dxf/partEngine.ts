@@ -423,12 +423,7 @@ function createPart(
      * esneme yönü gibi kurallar
      * buraya bağlanacak.
      */
-    allowedRotations: [
-      0,
-      90,
-      180,
-      270,
-    ],
+    allowedRotations: undefined,
 
     lockDirection: false,
   };
