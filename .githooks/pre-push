@@ -1,0 +1,8 @@
+#!/bin/sh
+
+while read local_ref local_sha remote_ref remote_sha; do
+  if [ "$local_ref" = "refs/heads/main" ] && [ "$remote_ref" = "refs/heads/main" ]; then
+    npm run deploy:site || exit 1
+    break
+  fi
+done
