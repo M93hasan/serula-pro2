@@ -1,0 +1,12 @@
+﻿import { readFileSync } from 'node:fs';
+import DxfParser from 'dxf-parser';
+import { normalizeDxfEntities } from '../../frontend/src/dxf/dxfNormalizer.ts';
+import { createCurvesFromEntities } from '../../frontend/src/dxf/curveEngine.ts';
+import { detectContours } from '../../frontend/src/dxf/contourEngine.ts';
+import { createPartsFromContours } from '../../frontend/src/dxf/partEngine.ts';
+import { runNesting, DEFAULT_NESTING_SETTINGS } from '../../frontend/src/nesting/nestingEngine.ts';
+export const parts = createPartsFromContours(detectContours(createCurvesFromEntities(normalizeDxfEntities(new DxfParser().parseSync(readFileSync('00.dxf', 'utf8'))))));
+console.log('Parts', parts.length, 'vertices', parts.map(p => p.outerContour.points.length));
+const start = performance.now();
+const result = runNesting(parts, DEFAULT_NESTING_SETTINGS);
+console.log(JSON.stringify({ ...result, placements: undefined, duration: performance.now() - start }));

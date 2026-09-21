@@ -11,7 +11,9 @@
     "dev:frontend": "npm --workspace frontend run dev",
     "build": "npm run build:frontend",
     "build:frontend": "npm --workspace frontend run build",
-    "test": "node --import ./tests/nesting/register.mjs tests/nesting/verify.mjs"
+    "test": "npm run test:nesting && npm run test:export",
+    "test:nesting": "node --import ./tests/nesting/register.mjs tests/nesting/verify.mjs",
+    "test:export": "node --import ./tests/nesting/register.mjs tests/nesting/export.mjs && node --import ./tests/nesting/register.mjs tests/nesting/export-primitives.mjs"
   },
   "author": {
     "name": "Muhammet Hasanoğlu"
@@ -22,8 +24,5 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
-  },
-  "dependencies": {
-    "firebase": "^12.19.0"
   }
 }

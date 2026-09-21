@@ -40,8 +40,12 @@ export default function NestingControls(props: Props) {
           <label className="setting-field"><span>Başlangıç köşesi</span><select aria-label="Başlangıç" value={settings.startCorner} onChange={e => props.onSettings({ ...settings, startCorner: e.target.value as NestingSettings['startCorner'] })}>
             <option value="bottom-left">↙ Sol alt</option><option value="bottom-right">↘ Sağ alt</option><option value="top-left">↖ Sol üst</option><option value="top-right">↗ Sağ üst</option></select></label>
         </div>
-        <div className="settings-footer"><div className="rotation-group"><span>İzin verilen dönüşler</span><div>{[0, 90, 180, 270].map(r => <label key={r} className={settings.rotations.includes(r) ? 'rotation-chip selected' : 'rotation-chip'}>
-          <input aria-label={`${r} derece`} type="checkbox" checked={settings.rotations.includes(r)} onChange={e => props.onSettings({ ...settings, rotations: e.target.checked ? [...settings.rotations, r].sort((a,b) => a-b) : settings.rotations.filter(a => a !== r) })} />{r}°</label>)}</div></div>
+        <div className="settings-footer"><div className="rotation-group"><span id="rotation-label">İzin verilen dönüşler</span><div role="radiogroup" aria-labelledby="rotation-label">{[
+          { label: '0°', angles: [0], hint: 'Yalnızca 0°; yön değişmez' },
+          { label: '0°–90°', angles: [0, 90], hint: '0° veya 90°' },
+          { label: 'Any', angles: [0, 90, 180, 270], hint: '0°, 90°, 180° veya 270°' },
+        ].map(mode => <label key={mode.label} title={mode.hint} className={settings.rotations.length === mode.angles.length ? 'rotation-chip selected' : 'rotation-chip'}>
+          <input name="rotation-mode" aria-label={mode.label} type="radio" checked={settings.rotations.length === mode.angles.length} onChange={() => props.onSettings({ ...settings, rotations: [...mode.angles] })} />{mode.label}</label>)}</div><small className="rotation-description">{settings.rotations.length === 4 ? 'Any: 0°, 90°, 180° ve 270°' : settings.rotations.length === 2 ? 'Yalnızca 0° ve 90°' : 'Parçanın yönü korunur'}</small></div>
           <label className="simulation-switch"><input type="checkbox" checked={props.autoSimulation} onChange={e => props.onAutoSimulation(e.target.checked)} /><span><strong>Yerleşimi adım adım göster</strong><small>Hesaplama sonrası otomatik simülasyon</small></span></label>
         </div>
       </fieldset>}

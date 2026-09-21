@@ -29,7 +29,13 @@ export function prepareExport(result: NestingResult, parts: NestingPart[], curve
     if (!entity) throw new Error('Kaynak DXF geometrisi bulunamadı.');
     exported.push({ curve, entity, placement, part: partMap.get(placement.partId)! });
   }
-  return { curves: exported, result: { ...result, placements } };
+  const right = settings.startCorner.endsWith('right'), top = settings.startCorner.startsWith('top');
+  let usedWidth = 0, usedHeight = 0;
+  for (const polygon of polygons) for (const point of polygon) {
+    usedWidth = Math.max(usedWidth, right ? result.materialWidth - point.x : point.x);
+    usedHeight = Math.max(usedHeight, top ? result.materialHeight - point.y : point.y);
+  }
+  return { curves: exported, result: { ...result, placements, usedWidth, usedHeight } };
 }
 
 export function createDxfExport(items: ExportCurve[]): string {

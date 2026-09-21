@@ -1,4 +1,4 @@
-﻿import { runNesting, type NestingResult, type NestingSettings } from './nestingEngine';
+﻿import { runNesting, compactNesting, type NestingResult, type NestingSettings } from './nestingEngine';
 import type { NestingPart } from '../dxf/dxfTypes';
 import { calculateAbsoluteArea } from '../dxf/contourEngine';
 export interface AdvancedNestingOptions { maxTrials?: number }
@@ -21,14 +21,16 @@ export function isBetterResult(a: NestingResult, b: NestingResult): boolean {
 }
 export function runAdvancedNesting(parts: NestingPart[], settings: NestingSettings, options: AdvancedNestingOptions = {}): AdvancedNestingResult {
   const start = performance.now();
-  const requested = options.maxTrials ?? 8;
-  const limit = Number.isFinite(requested) ? Math.max(1, Math.min(metrics.length, Math.floor(requested))) : 8;
+  const requested = options.maxTrials ?? 10;
+  const limit = Number.isFinite(requested) ? Math.max(1, Math.min(10, Math.floor(requested))) : 10;
   let best: NestingResult | undefined, bestTrialIndex = 0;
   for (let i = 0; i < limit; i++) {
-    const metric = metrics[i % metrics.length];
+    const metric = metrics[i < metrics.length ? i : 7];
     const ordered = [...parts].sort((a, b) => metric(b) - metric(a));
-    const result = runNesting(ordered, settings, { preserveOrder: true, searchStep: i === 0 ? undefined : 40 });
+    const result = runNesting(ordered, settings, { preserveOrder: true, searchStep: i === 0 ? undefined : i === 8 ? 20 : 40, candidateLimit: i === 8 ? 4 : i === 9 ? 8 : 1 });
     if (!best || isBetterResult(result, best)) { best = result; bestTrialIndex = i; }
   }
+  const compacted = compactNesting(parts, best!, settings, true);
+  if (isBetterResult(compacted, best!)) best = compacted;
   return { result: best!, trials: limit, durationMs: performance.now() - start, bestTrialIndex };
 }

@@ -1217,13 +1217,13 @@ function normalizeEntity(
       typeof entity.startParameter ===
       "number"
         ? entity.startParameter
-        : undefined,
+        : entity.type?.toUpperCase() === "ELLIPSE" ? entity.startAngle : undefined,
 
     endParameter:
       typeof entity.endParameter ===
       "number"
         ? entity.endParameter
-        : undefined,
+        : entity.type?.toUpperCase() === "ELLIPSE" ? entity.endAngle : undefined,
 
     raw:
       entity,

@@ -2303,6 +2303,7 @@ export default function DxfViewer({
               <div><span>Yerleşen / toplam</span><strong>{nestingResult.placedCount}<small> / {nestingResult.totalCount}</small></strong></div>
               <div><span>Kullanılan yükseklik</span><strong>{nestingResult.usedHeight.toFixed(1)}<small> mm</small></strong></div>
               <div><span>Malzeme verimi</span><strong>%{nestingResult.efficiency.toFixed(1)}</strong></div>
+              <div title="Net parça alanı / kullanılan tam genişlikteki şerit alanı. Kalan şerit dahil değildir."><span>Yerleşim doluluğu</span><strong>%{(100 * nestingResult.usedArea / Math.max(1, nestingResult.materialWidth * (nestingResult.usedHeight + nestingResult.margin))).toFixed(1)}</strong></div>
               <div><span>Yerleşemeyen</span><strong className={nestingResult.unplacedCount ? "has-unplaced" : "all-placed"}>{nestingResult.unplacedCount}<small> parça</small></strong></div>
             </div>
             <div className="result-details">
@@ -2311,6 +2312,7 @@ export default function DxfViewer({
               <ResultItem label="Kullanılan genişlik" value={nestingResult.usedWidth.toFixed(1) + " mm"} />
               <ResultItem label="Parça alanı" value={(nestingResult.usedArea / 1e6).toFixed(4) + " m²"} />
               <ResultItem label="Malzeme alanı" value={(nestingResult.materialArea / 1e6).toFixed(4) + " m²"} />
+              {operatorSettings.materialType === 'sheet' && <ResultItem label="Kalan şerit" value={Math.max(0, nestingResult.materialHeight - nestingResult.usedHeight - nestingResult.margin).toFixed(1) + " mm"} />}
             </div>
           </section>
         </>

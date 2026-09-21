@@ -21,7 +21,8 @@ export const DEFAULT_NESTING_SETTINGS: NestingSettings = {
   materialType: 'sheet', sheetWidth: 1400, sheetHeight: 1000, rollWidth: 1400,
   margin: 5, spacing: 0.3, rotations: [0, 90, 180, 270], startCorner: 'bottom-left',
 };
-type Polygon = { points: DxfPoint[]; width: number; height: number };
+export type NestingPolygon = { points: DxfPoint[]; width: number; height: number };
+type Polygon = NestingPolygon;
 type Positioned = Polygon & { x: number; y: number };
 const EPS = 1e-8;
 function rotate(p: DxfPoint, rotation: number): DxfPoint {
@@ -40,7 +41,7 @@ export function transformNestingPoint(point: DxfPoint, part: NestingPart, placem
     y: local.y + placement.y + (placement.rotation === 180 ? height : placement.rotation === 270 ? width : 0),
   };
 }
-function polygon(part: NestingPart, rotation: number): Polygon {
+export function polygon(part: NestingPart, rotation: number): Polygon {
   return {
     points: part.outerContour.points.map(p => transformNestingPoint(p, part, {
       partId: part.id, instanceId: '', x: 0, y: 0, rotation, placed: true,
@@ -102,7 +103,7 @@ export function polygonsConflict(a: DxfPoint[], b: DxfPoint[], spacing: number):
   }
   return pointInPolygon(a[0], b) || pointInPolygon(b[0], a);
 }
-function fits(shape: Polygon, x: number, y: number, placed: Positioned[], width: number, height: number, settings: NestingSettings): boolean {
+export function fits(shape: Polygon, x: number, y: number, placed: Positioned[], width: number, height: number, settings: NestingSettings): boolean {
   const { margin, spacing } = settings;
   if (x < margin - EPS || y < margin - EPS || x + shape.width > width - margin + EPS || y + shape.height > height - margin + EPS) return false;
   let points: DxfPoint[] | undefined;
@@ -135,7 +136,7 @@ export function createPartInstances(parts: NestingPart[], preserveOrder = false)
     return Array.from({ length: part.quantity }, (_, i) => ({ part, instanceId: `${part.id}-${i}` }));
   });
 }
-export function runNesting(parts: NestingPart[], settings: NestingSettings = DEFAULT_NESTING_SETTINGS, options: { preserveOrder?: boolean; searchStep?: number; candidateLimit?: number; firstRotation?: number } = {}): NestingResult {
+export function runNesting(parts: NestingPart[], settings: NestingSettings = DEFAULT_NESTING_SETTINGS, options: { preserveOrder?: boolean; searchStep?: number; candidateLimit?: number } = {}): NestingResult {
   validateSettings(settings);
   if (options.searchStep !== undefined && (!Number.isFinite(options.searchStep) || options.searchStep <= 0)) throw new Error('Arama adımı pozitif olmalı.');
   const instances = createPartInstances(parts, options.preserveOrder);
@@ -147,8 +148,7 @@ export function runNesting(parts: NestingPart[], settings: NestingSettings = DEF
   const fromTop = settings.startCorner.startsWith('top');
   let usedHeight = 0, usedWidth = 0, usedArea = 0;
   for (const { part, instanceId } of instances) {
-    let rotations = settings.rotations.filter(r => (!part.lockDirection || r === 0) && (!part.allowedRotations || part.allowedRotations.includes(r)));
-    if (placements.length === 0 && options.firstRotation !== undefined && rotations.includes(options.firstRotation)) rotations = [options.firstRotation];
+    const rotations = settings.rotations.filter(r => (!part.lockDirection || r === 0) && (!part.allowedRotations || part.allowedRotations.includes(r)));
     let best: { shape: Polygon; x: number; y: number; rotation: number; score: number } | undefined;
     for (const rotation of rotations) {
       const key = `${part.id}:${rotation}`;

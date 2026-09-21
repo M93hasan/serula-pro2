@@ -8,7 +8,7 @@ export type NestingWorkerResponse = NestingWorkerSuccess | NestingWorkerError;
 self.onmessage = (event: MessageEvent<NestingWorkerRequest>) => {
   try {
     if (event.data?.type !== 'RUN_NESTING') throw new Error('Geçersiz nesting isteği.');
-    const advanced = runAdvancedNesting(event.data.parts, event.data.settings, { maxTrials: 8 });
+    const advanced = runAdvancedNesting(event.data.parts, event.data.settings, { maxTrials: 10 });
     const response: NestingWorkerSuccess = { type: 'NESTING_COMPLETE', result: advanced.result,
       duration: advanced.durationMs, trialsRun: advanced.trials, bestTrialIndex: advanced.bestTrialIndex };
     self.postMessage(response);

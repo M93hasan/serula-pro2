@@ -1,8 +1,4 @@
-node_modules/
-.firebase/
-.firebaserc
-database/
-dataconnect/
+﻿node_modules/
+frontend/dist/
 storage/
-tests/
-00.dxf
+database/
