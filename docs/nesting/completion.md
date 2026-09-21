@@ -4,7 +4,7 @@
 - Üretim derlemesi: `npm run build` → `frontend/dist`
 - Tüm geometri / dışa aktarma testleri: `npm test`
 - Tarayıcı testi: Chrome test profili 9223 CDP portunda ve dev sunucusu 5173 portunda açıkken `node tests/nesting/ui-export.mjs`.
-- DXF örneği: depo kökündeki `00.dxf` derlemeye dahildir.
+- Uygulama DXF seçimiyle başlar; depo kökündeki `00.dxf` üretim derlemesine alınmaz.
 
 ## 21 Eylül 2026
 

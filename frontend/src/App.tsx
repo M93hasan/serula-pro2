@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useEffect,
   useRef,
   useState,
 } from "react";
@@ -13,28 +12,11 @@ import type { SerulaDxfEntity } from "./dxf/dxfTypes";
 
 import "./App.css";
 
-/*
- * =========================================================
- * GELİŞTİRME DXF DOSYASI
- * =========================================================
- *
- * Geçici geliştirme özelliği.
- *
- * Dosya:
- * C:\Users\lamasat\Desktop\nest\00.dxf
- *
- * Vite açısından frontend klasörünün bir üst dizininde.
- */
-const DEVELOPMENT_DXF_URL = new URL("../../00.dxf", import.meta.url).href;
-
 function App() {
   const [navigation, setNavigation] = useState<{ panel: "viewer" | "settings" | "parts" | "export"; token: number }>({ panel: "viewer", token: 0 });
   const navigate = (panel: typeof navigation.panel) => setNavigation({ panel, token: Date.now() });
   const fileInputRef =
     useRef<HTMLInputElement>(null);
-
-  const autoLoadStartedRef =
-    useRef(false);
 
   const [fileName, setFileName] =
     useState("");
@@ -82,79 +64,6 @@ function App() {
     },
     [],
   );
-
-  /*
-   * =========================================================
-   * 00.DXF OTOMATİK YÜKLE
-   * =========================================================
-   */
-
-  useEffect(() => {
-    /*
-     * React StrictMode geliştirme sırasında
-     * effect'i iki kez çalıştırabilir.
-     *
-     * Bu kontrol 00.dxf'in iki kez
-     * yüklenmesini engeller.
-     */
-    if (
-      autoLoadStartedRef.current
-    ) {
-      return;
-    }
-
-    autoLoadStartedRef.current =
-      true;
-
-    const loadDevelopmentDxf =
-      async () => {
-        try {
-          setIsLoading(true);
-          setError("");
-
-          const response =
-            await fetch(
-              DEVELOPMENT_DXF_URL,
-            );
-
-          if (!response.ok) {
-            throw new Error(
-              `00.dxf yüklenemedi. HTTP ${response.status}`,
-            );
-          }
-
-          const text =
-            await response.text();
-
-          parseDxfText(
-            text,
-            "00.dxf",
-          );
-        } catch (err) {
-          console.error(
-            "00.dxf otomatik yükleme hatası:",
-            err,
-          );
-
-          /*
-           * Otomatik dosya bulunamazsa
-           * uygulamayı kilitlemiyoruz.
-           *
-           * Operatör yine DXF Seç
-           * butonunu kullanabilir.
-           */
-          setError(
-            err instanceof Error
-              ? `00.dxf otomatik yüklenemedi: ${err.message}`
-              : "00.dxf otomatik yüklenemedi.",
-          );
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-    loadDevelopmentDxf();
-  }, [parseDxfText]);
 
   /*
    * =========================================================
@@ -492,8 +401,8 @@ function App() {
                   }}
                 >
                   {isLoading
-                    ? "00.dxf otomatik yükleniyor..."
-                    : "DXF bekleniyor..."}
+                    ? "DXF okunuyor..."
+                    : "Başlamak için DXF dosyası seçin."}
                 </div>
               </div>
             </section>

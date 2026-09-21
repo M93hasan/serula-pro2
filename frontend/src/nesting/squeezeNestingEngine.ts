@@ -92,7 +92,7 @@ export function squeezeNesting(parts:NestingPart[], source:NestingResult, settin
   }
   if(energy!==0)return null;
   const placements=source.placements.map(p=>({...p}));
-  const accepted:ReturnType<typeof polygon>[] & {x:number;y:number}[]=[];
+  const accepted:(ReturnType<typeof polygon> & {x:number;y:number})[]=[];
   let usedHeight=0,usedWidth=0;
   for(const p of pieces){
     const shape=polygon(p.part,p.mask.rotation);shape.points=shape.points.map(point=>({x:right?shape.width-point.x:point.x,y:top?shape.height-point.y:point.y}));
