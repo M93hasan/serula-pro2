@@ -1,3 +1,5 @@
+import { prepareGeometry } from './geometryDiagnostics';
+import { selectSheet } from '../nesting/sheetResult';
 import {
   useCallback,
   useEffect,
@@ -15,7 +17,6 @@ import type {
 } from "./dxfTypes";
 
 import {
-  createCurvesFromEntities,
   getCurveStatistics,
 } from "./curveEngine";
 
@@ -264,11 +265,15 @@ export default function DxfViewer({
   ] = useState(false);
 
   const [
-    nestingResult,
+    fullNestingResult,
     setNestingResult,
   ] = useState<
     NestingResult | null
   >(savedLayout?.result ?? null);
+  const [selectedSheet, setSelectedSheet] = useState(0);
+  const [searchStatus, setSearchStatus] = useState('');
+  const nestingResult = useMemo(() => fullNestingResult ? selectSheet(fullNestingResult, selectedSheet) : null, [fullNestingResult, selectedSheet]);
+
 
   /* =======================================================
      SIMULATION STATE
@@ -307,7 +312,8 @@ export default function DxfViewer({
      GEOMETRY
   ======================================================= */
 
-  const sourceCurves = useMemo(() => createCurvesFromEntities(entities), [entities]);
+  const geometry = useMemo(() => prepareGeometry(entities, operatorSettings.curveTolerance ?? 0.1), [entities, operatorSettings.curveTolerance]);
+  const sourceCurves = geometry.curves;
   const contours = useMemo(() => detectContours(sourceCurves), [sourceCurves]);
   const catalogue = useMemo(() => createPartsFromContours(contours), [contours]);
   const { parts, curves, curvePartMap } = useMemo(() => createJobGeometry(catalogue, sourceCurves, quantities), [catalogue, sourceCurves, quantities]);
@@ -418,6 +424,13 @@ export default function DxfViewer({
       event: MessageEvent<NestingWorkerResponse>,
     ) => {
       const response = event.data;
+      if (response.type === 'NESTING_PROGRESS') {
+        setNestingResult(response.progress.result);
+        setVisiblePlacementCount(response.progress.result.placedCount);
+        setSearchStatus(`${response.progress.phase} · ${(response.progress.elapsedMs / 1000).toFixed(1)} sn · ${response.progress.result.placedCount}/${response.progress.result.totalCount} parça · ${response.progress.iterations} arama · ${response.progress.penaltyUpdates} ceza güncellemesi`);
+        return;
+      }
+
 
       if (response.type === "NESTING_ERROR") {
         setIsNesting(false);
@@ -429,6 +442,7 @@ export default function DxfViewer({
       setSelectedPartId(null);
       setDragState(null);
       setNestingResult(response.result);
+      setSearchStatus(`${response.phase} · ${(response.duration / 1000).toFixed(1)} sn · bağımsız doğrulama tamamlandı`);
       setVisiblePlacementCount(autoSimulation ? 0 : response.result.placedCount);
       setIsSimulationPaused(false);
       setIsSimulating(autoSimulation);
@@ -1748,6 +1762,8 @@ export default function DxfViewer({
         return;
       }
 
+      if (geometry.issues.some(issue => issue.blocking)) { setNestingError("Geçersiz konturları düzeltmeden yerleştirme başlatılamaz."); return; }
+      setSelectedSheet(0); setSearchStatus("Başlatılıyor…");
       setNestingError(null);
       setIsNesting(true);
       setIsSimulating(false);
@@ -1956,10 +1972,14 @@ export default function DxfViewer({
         }}
         canExport={Boolean(nestingResult?.placedCount)} unplacedCount={nestingResult?.unplacedCount ?? 0} onExport={format => {
           if (!nestingResult) return;
-          try { exportLayout(format, nestingResult, parts, curves, curvePartMap, entities, transforms, { ...operatorSettings, spacing: partSpacing }, fileName); setNestingError(null); }
+          try { exportLayout(format, nestingResult, parts, curves, curvePartMap, entities, transforms, { ...operatorSettings, spacing: partSpacing }, (fullNestingResult?.sheetCount ?? 1)>1 ? `${fileName.replace(/\.dxf$/i,'')} plaka-${selectedSheet+1}.dxf` : fileName); setNestingError(null); }
           catch (error) { setNestingError(error instanceof Error ? error.message : "Dışa aktarma başarısız."); }
         }} />
-      {isNesting && <button type="button" onClick={handleResetNesting}>Hesaplamayı iptal et</button>}
+      {geometry.issues.length > 0 && <details className="geometry-issues"><summary>{geometry.issues.length} geometri bildirimi — açık eğriler parça değildir</summary><ul>{geometry.issues.map((issue,i)=><li key={i}>{issue.entityId}: {issue.message}</li>)}</ul></details>}
+      {searchStatus && <p role="status" aria-live="polite">{searchStatus}</p>}
+      {isNesting && <><progress aria-label="Yerleştirme ilerlemesi" max={fullNestingResult?.totalCount || 1} value={fullNestingResult?.placedCount || 0} /><button type="button" onClick={() => { nestingWorkerRef.current?.postMessage({type:'STOP_NESTING'} satisfies NestingWorkerRequest); setSearchStatus('Durduruluyor; en iyi geçerli sonuç korunuyor…'); }}>Durdur ve en iyi sonucu koru</button></>}
+      {fullNestingResult && <p>Toplam: {fullNestingResult.placedCount}/{fullNestingResult.totalCount} parça · Yerleşmeyen: {fullNestingResult.unplacedCount} · {operatorSettings.materialType === 'sheet' ? `${fullNestingResult.sheetCount ?? 1} plaka` : `${fullNestingResult.materialHeight.toFixed(1)} mm rulo`} · Fire: %{(100-fullNestingResult.efficiency).toFixed(1)}{fullNestingResult.unplacedCount > 0 ? ' — eksik yerleşim' : ''}</p>}
+      {(fullNestingResult?.sheetCount ?? 0)>1 && <label>Görüntülenecek / DXF kaydedilecek plaka <select aria-label="Plaka seçimi" disabled={isNesting} value={Math.min(selectedSheet,(fullNestingResult?.sheetCount??1)-1)} onChange={e=>{setSelectedSheet(Number(e.target.value));setTransforms({});setIsSimulating(false);setVisiblePlacementCount(fullNestingResult?.placedCount??0);}}>{fullNestingResult?.sheets?.map(sheet=><option key={sheet.index} value={sheet.index}>Plaka {sheet.index+1} · {sheet.placedCount} parça</option>)}</select></label>}
 
       <div className="viewer-toolbar"
         style={{
@@ -2006,7 +2026,7 @@ export default function DxfViewer({
             onClick={
               () => handleAutoNesting()
             }
-            disabled={isNesting || parts.length === 0}
+            disabled={isNesting || parts.length === 0 || geometry.issues.some(issue => issue.blocking)}
             style={{
               ...primaryButtonStyle,
               opacity: isNesting ? 0.65 : 1,
@@ -2022,7 +2042,7 @@ export default function DxfViewer({
 
           {nestingResult && (
             <button type="button" className="quick-export" disabled={isNesting} onClick={() => {
-              try { exportLayout('dxf', nestingResult, parts, curves, curvePartMap, entities, transforms, { ...operatorSettings, spacing: partSpacing }, fileName); setNestingError(null); }
+              try { exportLayout('dxf', nestingResult, parts, curves, curvePartMap, entities, transforms, { ...operatorSettings, spacing: partSpacing }, (fullNestingResult?.sheetCount ?? 1)>1 ? `${fileName.replace(/\.dxf$/i,'')} plaka-${selectedSheet+1}.dxf` : fileName); setNestingError(null); }
               catch (error) { setNestingError(error instanceof Error ? error.message : 'Dışa aktarma başarısız.'); }
             }}>↓ DXF Kaydet</button>
           )}

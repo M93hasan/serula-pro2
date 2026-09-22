@@ -10,13 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "clipper-lib": "^6.4.2",
     "dxf-parser": "^1.1.2",
+    "earcut": "^3.2.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "verb-nurbs": "^3.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/clipper-lib": "^6.4.0",
+    "@types/earcut": "^3.0.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

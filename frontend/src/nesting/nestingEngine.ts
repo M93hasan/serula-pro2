@@ -7,9 +7,11 @@ export interface NestingSettings {
   materialType: 'sheet' | 'roll';
   sheetWidth: number; sheetHeight: number; rollWidth: number;
   margin: number; spacing: number; rotations: number[]; startCorner: StartCorner;
+  curveTolerance?: number; timeBudgetMs?: number;
 }
 export interface NestingPlacement {
   partId: string; instanceId: string; x: number; y: number; rotation: number; placed: boolean;
+  sheetIndex?: number;
 }
 export interface NestingResult {
   placements: NestingPlacement[];
@@ -17,6 +19,8 @@ export interface NestingResult {
   usedWidth: number; usedHeight: number; usedArea: number;
   materialWidth: number; materialHeight: number; materialArea: number;
   efficiency: number; margin: number;
+  sheetCount?: number;
+  sheets?: { index: number; usedHeight: number; usedArea: number; placedCount: number }[];
 }
 export const DEFAULT_NESTING_SETTINGS: NestingSettings = {
   materialType: 'sheet', sheetWidth: 1400, sheetHeight: 1000, rollWidth: 1400,

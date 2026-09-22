@@ -36,16 +36,18 @@ export default function NestingControls(props: Props) {
             <option value="sheet">Plaka / Sheet</option><option value="roll">Rulo / Roll</option></select></label>
           {settings.materialType === 'sheet' ? <>{dimension('sheetWidth', 'Plaka genişliği')}{dimension('sheetHeight', 'Plaka yüksekliği')}</> : dimension('rollWidth', 'Rulo genişliği')}
           {dimension('margin', 'Kenar payı')}
+          <label className="setting-field"><span>Eğri toleransı (mm)</span><input aria-label="Eğri toleransı" type="number" min="0.001" max="5" step="0.01" value={settings.curveTolerance ?? 0.1} onChange={e=>props.onSettings({...settings,curveTolerance:Number(e.target.value)})} /></label>
+          <label className="setting-field"><span>Arama süresi (saniye)</span><input aria-label="Arama süresi" type="number" min="1" max="300" step="1" value={(settings.timeBudgetMs ?? 10000)/1000} onChange={e=>props.onSettings({...settings,timeBudgetMs:Number(e.target.value)*1000})} /></label>
           <label className="setting-field"><span>Parçalar arası mesafe</span><div className="unit-input"><input aria-label="Parça Aralığı" type="number" min="0" step="0.1" value={props.spacing} onChange={e => props.onSpacing(Number(e.target.value))} /><span>mm</span></div></label>
           <label className="setting-field"><span>Başlangıç köşesi</span><select aria-label="Başlangıç" value={settings.startCorner} onChange={e => props.onSettings({ ...settings, startCorner: e.target.value as NestingSettings['startCorner'] })}>
             <option value="bottom-left">↙ Sol alt</option><option value="bottom-right">↘ Sağ alt</option><option value="top-left">↖ Sol üst</option><option value="top-right">↗ Sağ üst</option></select></label>
         </div>
-        <div className="settings-footer"><div className="rotation-group"><span id="rotation-label">İzin verilen dönüşler</span><div role="radiogroup" aria-labelledby="rotation-label">{[
+        <p>Parça aralığı toplam kenardan kenara kesim mesafesidir; kerf ayrıca eklenmez. Aynalama yapılmaz.</p><div className="settings-footer"><div className="rotation-group"><span id="rotation-label">İzin verilen dönüşler</span><div role="radiogroup" aria-labelledby="rotation-label">{[
           { label: '0°', angles: [0], hint: 'Yalnızca 0°; yön değişmez' },
           { label: '0°–90°', angles: [0, 90], hint: '0° veya 90°' },
-          { label: 'Any', angles: ANY_ROTATIONS, hint: 'Serbest açılı döndürme (5° adımlarla)' },
+          { label: 'Any', angles: ANY_ROTATIONS, hint: '5° örnekleme, iyi açılar çevresinde 1° ince arama' },
         ].map(mode => <label key={mode.label} title={mode.hint} className={settings.rotations.length === mode.angles.length ? 'rotation-chip selected' : 'rotation-chip'}>
-          <input name="rotation-mode" aria-label={mode.label} type="radio" checked={settings.rotations.length === mode.angles.length} onChange={() => props.onSettings({ ...settings, rotations: [...mode.angles] })} />{mode.label}</label>)}</div><small className="rotation-description">{settings.rotations.length === ANY_ROTATIONS.length ? 'Serbest açılı döndürme (5° adımlarla)' : settings.rotations.length === 2 ? 'Yalnızca 0° ve 90°' : 'Parçalar döndürülmez'}</small></div>
+          <input name="rotation-mode" aria-label={mode.label} type="radio" checked={settings.rotations.length === mode.angles.length} onChange={() => props.onSettings({ ...settings, rotations: [...mode.angles] })} />{mode.label}</label>)}</div><small className="rotation-description">{settings.rotations.length === ANY_ROTATIONS.length ? '5° örnekleme, iyi açılar çevresinde 1° ince arama; süreyle sınırlı' : settings.rotations.length === 2 ? 'Yalnızca 0° ve 90°' : 'Parçalar döndürülmez'}</small></div>
           <label className="simulation-switch"><input type="checkbox" checked={props.autoSimulation} onChange={e => props.onAutoSimulation(e.target.checked)} /><span><strong>Yerleşimi adım adım göster</strong><small>Hesaplama sonrası otomatik simülasyon</small></span></label>
         </div>
       </fieldset>}

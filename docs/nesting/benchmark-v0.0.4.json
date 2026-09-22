@@ -1,0 +1,138 @@
+[
+  {
+    "source": "00.dxf (repository fixture; 32 parts)",
+    "engine": "legacy-v0.0.3",
+    "budgetMs": 10000,
+    "settings": {
+      "materialType": "roll",
+      "sheetWidth": 1400,
+      "sheetHeight": 1000,
+      "rollWidth": 1400,
+      "margin": 1,
+      "spacing": 0.3,
+      "rotations": [
+        0,
+        90
+      ],
+      "startCorner": "bottom-right",
+      "curveTolerance": 0.1
+    },
+    "placed": 32,
+    "requested": 32,
+    "unplaced": 0,
+    "sheets": null,
+    "usedLengthMm": 902.6268927441413,
+    "lastSheetUsedHeightMm": null,
+    "wastePercent": 34.06076288917423,
+    "elapsedMs": 7834.0019999999995,
+    "iterations": 3,
+    "penaltyUpdates": 0,
+    "validation": {
+      "valid": true,
+      "complete": true,
+      "minimumGap": 0.30000100000000884
+    }
+  },
+  {
+    "source": "00.dxf (repository fixture; 32 parts)",
+    "engine": "nfp-gls",
+    "budgetMs": 10000,
+    "settings": {
+      "materialType": "roll",
+      "sheetWidth": 1400,
+      "sheetHeight": 1000,
+      "rollWidth": 1400,
+      "margin": 1,
+      "spacing": 0.3,
+      "rotations": [
+        0,
+        90
+      ],
+      "startCorner": "bottom-right",
+      "curveTolerance": 0.1
+    },
+    "placed": 32,
+    "requested": 32,
+    "unplaced": 0,
+    "sheets": null,
+    "usedLengthMm": 942.8491830078123,
+    "lastSheetUsedHeightMm": null,
+    "wastePercent": 36.87375481050752,
+    "elapsedMs": 10067.085299999999,
+    "iterations": 10,
+    "penaltyUpdates": 6,
+    "validation": {
+      "valid": true,
+      "complete": true,
+      "minimumGap": 0.3001999999999043
+    }
+  },
+  {
+    "source": "00.dxf (repository fixture; 32 parts)",
+    "engine": "legacy-v0.0.3",
+    "budgetMs": 10000,
+    "settings": {
+      "materialType": "sheet",
+      "sheetWidth": 1400,
+      "sheetHeight": 1000,
+      "rollWidth": 1400,
+      "margin": 1,
+      "spacing": 0.3,
+      "rotations": [
+        0,
+        90
+      ],
+      "startCorner": "bottom-right",
+      "curveTolerance": 0.1
+    },
+    "placed": 32,
+    "requested": 32,
+    "unplaced": 0,
+    "sheets": 1,
+    "usedLengthMm": null,
+    "lastSheetUsedHeightMm": 901.6268927441413,
+    "wastePercent": 40.48147129673616,
+    "elapsedMs": 7822.507099999999,
+    "iterations": 3,
+    "penaltyUpdates": 0,
+    "validation": {
+      "valid": true,
+      "complete": true,
+      "minimumGap": 0.30000100000000884
+    }
+  },
+  {
+    "source": "00.dxf (repository fixture; 32 parts)",
+    "engine": "nfp-gls",
+    "budgetMs": 10000,
+    "settings": {
+      "materialType": "sheet",
+      "sheetWidth": 1400,
+      "sheetHeight": 1000,
+      "rollWidth": 1400,
+      "margin": 1,
+      "spacing": 0.3,
+      "rotations": [
+        0,
+        90
+      ],
+      "startCorner": "bottom-right",
+      "curveTolerance": 0.1
+    },
+    "placed": 32,
+    "requested": 32,
+    "unplaced": 0,
+    "sheets": 1,
+    "usedLengthMm": null,
+    "lastSheetUsedHeightMm": 941.8491830078123,
+    "wastePercent": 40.481471296736174,
+    "elapsedMs": 10063.726499999997,
+    "iterations": 10,
+    "penaltyUpdates": 7,
+    "validation": {
+      "valid": true,
+      "complete": true,
+      "minimumGap": 0.3001999999999043
+    }
+  }
+]

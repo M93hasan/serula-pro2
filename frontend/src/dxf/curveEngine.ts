@@ -1,3 +1,4 @@
+import { adaptiveEntity, simplifyCurve } from './adaptiveGeometry';
 import type {
   DxfPoint,
   SerulaCurve,
@@ -856,9 +857,10 @@ function detectClosed(
 
 function entityToCurve(
   entity: SerulaDxfEntity,
+  tolerance?: number,
 ): SerulaCurve | null {
   const points =
-    evaluateEntity(entity);
+    tolerance === undefined ? evaluateEntity(entity) : simplifyCurve(adaptiveEntity(entity, tolerance / 2) ?? evaluateEntity(entity), tolerance / 2);
 
   if (points.length < 2) {
     return null;
@@ -933,12 +935,13 @@ function entityToCurve(
 
 export function createCurvesFromEntities(
   entities: SerulaDxfEntity[],
+  options: { tolerance?: number } = {},
 ): SerulaCurve[] {
   const curves: SerulaCurve[] = [];
 
   for (const entity of entities) {
     const curve =
-      entityToCurve(entity);
+      entityToCurve(entity, options.tolerance);
 
     if (curve) {
       curves.push(curve);

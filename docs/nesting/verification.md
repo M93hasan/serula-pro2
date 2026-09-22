@@ -4,7 +4,7 @@
 Geometri testleri: `npm test` (Node 24 ile doğrulandı).
 Backend klasörü henüz bir uygulama içermiyor; kök komutlar mevcut frontend'i çalıştırır.
 
-2026-09-19 / 00.dxf, 1400 × 1000 mm, 5 mm kenar payı:
+2026-09-19 / 00.dxf, 1400 × 1000 mm, 1 mm kenar payı:
 
 | Aralık | Yerleşen | Kullanılan yükseklik | Ölçülen minimum mesafe |
 | --- | --- | --- | --- |

@@ -14,7 +14,7 @@ DXF, SVG ve JSON dosyaları indirilebilir. DXF spline/arc/circle/ellipse/polylin
 
 10 kontrollü yerleşim denemesi ve son sıkıştırma aşaması uygulanır. Parça adedi ilk önceliktir; daha az yükseklik ve genişlik ikinci önceliktir. Sonuç bir sezgisel çözümdür, küresel optimum iddiası yoktur.
 
-| 1400 × 1000 mm, kenar payı 5 mm | Yerleşen | Yükseklik | Minimum ölçülen aralık |
+| 1400 × 1000 mm, kenar payı 1 mm | Yerleşen | Yükseklik | Minimum ölçülen aralık |
 | --- | --- | --- | --- |
 | 0.3 mm | 32/32 | 824.6575 mm | 0.300017 mm |
 | 0.5 mm | 32/32 | 818.9445 mm | 0.500080 mm |
