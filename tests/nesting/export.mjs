@@ -1,5 +1,6 @@
 ﻿import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync} from 'node:fs';
+import {writeFileSync} from 'node:fs';
+import {loadFixtureText} from './fixture.mjs';
 import DxfParser from 'dxf-parser';
 import {normalizeDxfEntities} from '../../frontend/src/dxf/dxfNormalizer.ts';
 import {createCurvesFromEntities} from '../../frontend/src/dxf/curveEngine.ts';
@@ -8,7 +9,7 @@ import {createPartsFromContours} from '../../frontend/src/dxf/partEngine.ts';
 import {createJobGeometry} from '../../frontend/src/dxf/jobGeometry.ts';
 import {prepareExport,createDxfExport,createSvgExport} from '../../frontend/src/dxf/nestingExport.ts';
 import {runNesting,DEFAULT_NESTING_SETTINGS,transformNestingPoint} from '../../frontend/src/nesting/nestingEngine.ts';
-const entities=normalizeDxfEntities(new DxfParser().parseSync(readFileSync('00.dxf','utf8')));
+const entities=normalizeDxfEntities(new DxfParser().parseSync(loadFixtureText()));
 const curves=createCurvesFromEntities(entities), catalogue=createPartsFromContours(detectContours(curves));
 const settings={...DEFAULT_NESTING_SETTINGS,materialType:'roll'};
 for(const quantities of [{},{'part-0':3,'part-1':0}]) {

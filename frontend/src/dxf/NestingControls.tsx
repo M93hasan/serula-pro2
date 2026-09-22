@@ -42,7 +42,7 @@ export default function NestingControls(props: Props) {
           <label className="setting-field"><span>Başlangıç köşesi</span><select aria-label="Başlangıç" value={settings.startCorner} onChange={e => props.onSettings({ ...settings, startCorner: e.target.value as NestingSettings['startCorner'] })}>
             <option value="bottom-left">↙ Sol alt</option><option value="bottom-right">↘ Sağ alt</option><option value="top-left">↖ Sol üst</option><option value="top-right">↗ Sağ üst</option></select></label>
         </div>
-        <p>Parça aralığı toplam kenardan kenara kesim mesafesidir; kerf ayrıca eklenmez. Aynalama yapılmaz.</p><div className="settings-footer"><div className="rotation-group"><span id="rotation-label">İzin verilen dönüşler</span><div role="radiogroup" aria-labelledby="rotation-label">{[
+        <p>Parça aralığı toplam kesim mesafesidir; kerf ayrıca eklenmez. Eğri toleransı kadar güvenlik payı her kontur çevresinde korunur. Aynalama yapılmaz.</p><div className="settings-footer"><div className="rotation-group"><span id="rotation-label">İzin verilen dönüşler</span><div role="radiogroup" aria-labelledby="rotation-label">{[
           { label: '0°', angles: [0], hint: 'Yalnızca 0°; yön değişmez' },
           { label: '0°–90°', angles: [0, 90], hint: '0° veya 90°' },
           { label: 'Any', angles: ANY_ROTATIONS, hint: '5° örnekleme, iyi açılar çevresinde 1° ince arama' },

@@ -1,6 +1,6 @@
 {
   "name": "serula-nesting-pro",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Serula Nesting Pro - Web tabanlı DXF nesting ve malzeme optimizasyon uygulaması",
   "private": true,
   "workspaces": [
@@ -13,13 +13,16 @@
     "build:frontend": "npm --workspace frontend run build",
     "deploy:site": "node scripts/deploy-pages.mjs",
     "watch:site": "node scripts/watch-site.mjs",
-    "test": "npm run test:cavities && npm run test:rotation && npm run test:nesting && npm run test:export",
+    "test": "npm run test:gls && npm run test:cavities && npm run test:rotation && npm run test:nesting && npm run test:export && npm run test:native",
     "test:nesting": "node --import ./tests/nesting/register.mjs tests/nesting/verify.mjs",
     "test:export": "node --import ./tests/nesting/register.mjs tests/nesting/export.mjs && node --import ./tests/nesting/register.mjs tests/nesting/export-primitives.mjs && node --import ./tests/nesting/register.mjs tests/nesting/dxf-structure.mjs",
     "test:dxf": "node --import ./tests/nesting/register.mjs tests/nesting/export-primitives.mjs && node --import ./tests/nesting/register.mjs tests/nesting/dxf-structure.mjs",
     "test:rotation": "node --import ./tests/nesting/register.mjs tests/nesting/rotation-modes.mjs",
     "version:next": "node scripts/next-version.mjs",
-    "test:cavities": "node --import ./tests/nesting/register.mjs tests/nesting/cavities.mjs"
+    "test:cavities": "node --import ./tests/nesting/register.mjs tests/nesting/cavities.mjs",
+    "test:gls": "node --import ./tests/nesting/register.mjs tests/nesting/gls.mjs && node --import ./tests/nesting/register.mjs tests/nesting/worker.mjs",
+    "benchmark:nesting": "node --import ./tests/nesting/register.mjs tests/nesting/compare-engines.mjs",
+    "test:native": "node --import ./tests/nesting/register.mjs tests/nesting/native-clearance.mjs"
   },
   "author": {
     "name": "Muhammet Hasanoğlu"

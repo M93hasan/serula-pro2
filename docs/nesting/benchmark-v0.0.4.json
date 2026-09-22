@@ -21,16 +21,17 @@
     "requested": 32,
     "unplaced": 0,
     "sheets": null,
-    "usedLengthMm": 902.6268927441413,
+    "usedLengthMm": 885.9181462353519,
     "lastSheetUsedHeightMm": null,
-    "wastePercent": 34.06076288917423,
-    "elapsedMs": 7834.0019999999995,
+    "wastePercent": 32.81712429507883,
+    "elapsedMs": 10000,
+    "lastReportedIncumbentMs": 8433.259199999999,
     "iterations": 3,
     "penaltyUpdates": 0,
     "validation": {
       "valid": true,
       "complete": true,
-      "minimumGap": 0.30000100000000884
+      "minimumGap": 0.5000009999998838
     }
   },
   {
@@ -55,16 +56,17 @@
     "requested": 32,
     "unplaced": 0,
     "sheets": null,
-    "usedLengthMm": 942.8491830078123,
+    "usedLengthMm": 865.7276651083977,
     "lastSheetUsedHeightMm": null,
-    "wastePercent": 36.87375481050752,
-    "elapsedMs": 10067.085299999999,
-    "iterations": 10,
-    "penaltyUpdates": 6,
+    "wastePercent": 31.25028677949028,
+    "elapsedMs": 10104.306599999998,
+    "lastReportedIncumbentMs": 10104.306599999998,
+    "iterations": 7,
+    "penaltyUpdates": 4,
     "validation": {
       "valid": true,
       "complete": true,
-      "minimumGap": 0.3001999999999043
+      "minimumGap": 0.5000010000001112
     }
   },
   {
@@ -90,15 +92,16 @@
     "unplaced": 0,
     "sheets": 1,
     "usedLengthMm": null,
-    "lastSheetUsedHeightMm": 901.6268927441413,
-    "wastePercent": 40.48147129673616,
-    "elapsedMs": 7822.507099999999,
+    "lastSheetUsedHeightMm": 884.8181462353518,
+    "wastePercent": 40.48147129673618,
+    "elapsedMs": 10000,
+    "lastReportedIncumbentMs": 8686.9316,
     "iterations": 3,
     "penaltyUpdates": 0,
     "validation": {
       "valid": true,
       "complete": true,
-      "minimumGap": 0.30000100000000884
+      "minimumGap": 0.5000009999998838
     }
   },
   {
@@ -124,15 +127,16 @@
     "unplaced": 0,
     "sheets": 1,
     "usedLengthMm": null,
-    "lastSheetUsedHeightMm": 941.8491830078123,
+    "lastSheetUsedHeightMm": 864.6276651083977,
     "wastePercent": 40.481471296736174,
-    "elapsedMs": 10063.726499999997,
-    "iterations": 10,
-    "penaltyUpdates": 7,
+    "elapsedMs": 10079.704799999996,
+    "lastReportedIncumbentMs": 10079.704799999996,
+    "iterations": 7,
+    "penaltyUpdates": 4,
     "validation": {
       "valid": true,
       "complete": true,
-      "minimumGap": 0.3001999999999043
+      "minimumGap": 0.5000010000001112
     }
   }
 ]

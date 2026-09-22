@@ -866,15 +866,19 @@ function entityToCurve(
     return null;
   }
 
-  const closed =
+  let closed =
     detectClosed(
       entity,
       points,
     );
+  if (tolerance !== undefined && !entity.closed && !['CIRCLE', 'ELLIPSE'].includes(entity.type.toUpperCase())) {
+    closed = points.length >= 3 && pointsEqual(points[0], points[points.length - 1], 1e-8);
+  }
 
   return {
     id:
       `curve-${entity.id}`,
+    approximationTolerance: tolerance,
 
     entityId:
       entity.id,

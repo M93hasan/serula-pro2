@@ -1,5 +1,6 @@
 import type { DxfPoint, NestingPart, SerulaCurve, SerulaDxfEntity } from './dxfTypes';
 import { shapesConflict, transformNestingPoint, type NestingPlacement, type NestingResult, type NestingSettings } from '../nesting/nestingEngine';
+import { geometryAllowance } from '../nesting/geometryAllowance';
 
 type ExportCurve = { curve: SerulaCurve; entity: SerulaDxfEntity; part: NestingPart; placement: NestingPlacement };
 const number = (value: number) => {
@@ -8,7 +9,9 @@ const number = (value: number) => {
 };
 const escapeXml = (value: string) => value.replace(/[<>&"']/g, c => ({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&apos;' })[c]!);
 
-export function prepareExport(result: NestingResult, parts: NestingPart[], curves: SerulaCurve[], owners: Map<string, string>, entities: SerulaDxfEntity[], transforms: Record<string, DxfPoint>, settings: NestingSettings) {
+export function prepareExport(result: NestingResult, parts: NestingPart[], curves: SerulaCurve[], owners: Map<string, string>, entities: SerulaDxfEntity[], transforms: Record<string, DxfPoint>, requestedSettings: NestingSettings) {
+  const allowance=geometryAllowance(parts),settings={...requestedSettings,spacing:requestedSettings.spacing+2*allowance,margin:requestedSettings.margin+allowance};
+  if ((result.sheetCount ?? 1) > 1) throw new Error('DXF için bir plaka seçin; farklı plakalar üst üste aktarılamaz.');
   const partMap = new Map(parts.map(p => [p.id, p]));
   const entityMap = new Map(entities.map(e => [e.id, e]));
   const placements = result.placements.map(p => ({ ...p, x: p.x + (transforms[p.partId]?.x ?? 0), y: p.y + (transforms[p.partId]?.y ?? 0) }));

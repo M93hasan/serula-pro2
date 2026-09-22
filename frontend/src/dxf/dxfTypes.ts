@@ -151,6 +151,7 @@ export interface SerulaDxfEntity {
 ========================================================= */
 
 export interface SerulaCurve {
+  approximationTolerance?: number;
   id: string;
 
   entityId: string;

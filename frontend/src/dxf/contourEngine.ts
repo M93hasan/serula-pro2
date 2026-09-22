@@ -249,6 +249,7 @@ function boundsContains(
 
 function normalizeClosedPoints(
   points: DxfPoint[],
+  tolerance = POINT_TOLERANCE,
 ): DxfPoint[] {
   if (points.length < 3) {
     return [];
@@ -271,6 +272,7 @@ function normalizeClosedPoints(
       result[
         result.length - 1
       ],
+      tolerance,
     )
   ) {
     result.pop();
@@ -299,6 +301,7 @@ function curveToContour(
   const points =
     normalizeClosedPoints(
       curve.points,
+      curve.approximationTolerance === undefined ? POINT_TOLERANCE : 1e-8,
     );
 
   if (points.length < 3) {

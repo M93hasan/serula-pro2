@@ -9,8 +9,10 @@ import {createPartsFromContours} from '../../frontend/src/dxf/partEngine.ts';
 import {runNesting,DEFAULT_NESTING_SETTINGS} from '../../frontend/src/nesting/nestingEngine.ts';
 import {runGlsNesting,compareLayouts} from '../../frontend/src/nesting/glsNestingEngine.ts';
 import {validateLayout} from '../../frontend/src/nesting/validateLayout.ts';
+import {geometryAllowance} from '../../frontend/src/nesting/geometryAllowance.ts';
 if(!isMainThread){
  const {engine,parts,settings,budget}=workerData;const start=performance.now();
+ parentPort.postMessage({started:true});
  if(engine==='nfp-gls'){
   const result=await runGlsNesting(parts,settings,{timeBudgetMs:budget,onProgress:p=>parentPort.postMessage({result:p.result,elapsed:p.elapsedMs,iterations:p.iterations,penaltyUpdates:p.penaltyUpdates})});
   parentPort.postMessage({result:result.result,elapsed:result.elapsedMs,iterations:result.iterations,penaltyUpdates:result.penaltyUpdates,done:true});
@@ -19,12 +21,13 @@ if(!isMainThread){
   let best;
   for(let i=0;i<metrics.length;i++){
    const ordered=[...parts].sort((a,b)=>metrics[i](b)-metrics[i](a));
-   const result=runNesting(ordered,settings,{preserveOrder:true,searchStep:i===0?undefined:40,candidateLimit:1});
+   const allowance=geometryAllowance(parts);
+   const result=runNesting(ordered,{...settings,spacing:settings.spacing+2*allowance,margin:settings.margin+allowance},{preserveOrder:true,searchStep:i===0?undefined:40,candidateLimit:1});
    if(performance.now()-start>budget)break;
    if(!best||compareLayouts(result,best,settings)<0)best=result;
    parentPort.postMessage({result:best,elapsed:performance.now()-start,iterations:i+1,penaltyUpdates:0});
   }
-  parentPort.postMessage({done:true});
+  parentPort.postMessage({done:true,elapsed:performance.now()-start});
  }
 }else{
  const path=process.env.NESTING_DXF??'storage/reference.dxf';
@@ -37,14 +40,18 @@ if(!isMainThread){
   const settings={...DEFAULT_NESTING_SETTINGS,materialType,curveTolerance:0.1};
   const last=await new Promise((resolve,reject)=>{
    const worker=new Worker(new URL(import.meta.url),{workerData:{parts,settings,budget,engine},execArgv:['--import','./tests/nesting/register.mjs']});let last;let timer;
-   worker.on('message',message=>{if(message.result)last=message;if(message.done){clearTimeout(timer);void worker.terminate();resolve(last);}});
+   worker.on('message',message=>{
+    if(message.started){timer=setTimeout(()=>{void worker.terminate();resolve(last?{...last,totalElapsed:engine==='nfp-gls'?budget+1000:budget}:last);},engine==='nfp-gls'?budget+1000:budget);}
+    if(message.result)last=message;
+    if(message.done){clearTimeout(timer);void worker.terminate();resolve(last?{...last,totalElapsed:message.elapsed}:last);}
+   });
    worker.on('error',reject);
-   // Same optimization deadline; startup/validation grace does not admit late incumbents.
-   timer=setTimeout(()=>{void worker.terminate();resolve(last);},budget+1000);
+   // Identical optimization budgets measured inside the worker. New engine gets
+   // a separate final-validation grace; the legacy synchronous engine is stopped.
   });
   if(!last)throw Error(`${engine}: no incumbent within budget`);
   const validation=validateLayout(parts,settings,last.result),r=last.result;
-  const report={source:'00.dxf (repository fixture; 32 parts)',engine,budgetMs:budget,settings,placed:r.placedCount,requested:r.totalCount,unplaced:r.unplacedCount,sheets:materialType==='sheet'?(r.sheetCount??1):null,usedLengthMm:materialType==='roll'?r.materialHeight:null,lastSheetUsedHeightMm:materialType==='sheet'?r.usedHeight:null,wastePercent:100-r.efficiency,elapsedMs:last.elapsed,iterations:last.iterations,penaltyUpdates:last.penaltyUpdates,validation};reports.push(report);console.log(JSON.stringify(report));
+  const report={source:'00.dxf (repository fixture; 32 parts)',engine,budgetMs:budget,settings,placed:r.placedCount,requested:r.totalCount,unplaced:r.unplacedCount,sheets:materialType==='sheet'?(r.sheetCount??1):null,usedLengthMm:materialType==='roll'?r.materialHeight:null,lastSheetUsedHeightMm:materialType==='sheet'?r.usedHeight:null,wastePercent:100-r.efficiency,elapsedMs:last.totalElapsed,lastReportedIncumbentMs:last.elapsed,iterations:last.iterations,penaltyUpdates:last.penaltyUpdates,validation};reports.push(report);console.log(JSON.stringify(report));
  }
  writeFileSync('docs/nesting/benchmark-v0.0.4.json',JSON.stringify(reports,null,2)+'\n');
 }

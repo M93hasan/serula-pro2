@@ -11,7 +11,7 @@ function deviation(p: DxfPoint, a: DxfPoint, b: DxfPoint) {
  * The evaluator spends the other half; bends above the budget are retained. */
 export function simplifyCurve(points:DxfPoint[],tolerance:number):DxfPoint[] {
   if(points.length<=2)return points;
-  const kept=new Set([0,points.length-1]),stack:[[number,number]]|[number,number][]=[[0,points.length-1]];
+  const kept=new Set([0,points.length-1]),stack:[number,number][]=[[0,points.length-1]];
   while(stack.length){const [a,b]=stack.pop()!;let largest=tolerance,index=-1;
     for(let i=a+1;i<b;i++){const error=deviation(points[i],points[a],points[b]);if(error>largest){largest=error;index=i;}}
     if(index>=0){kept.add(index);stack.push([a,index],[index,b]);}
@@ -41,7 +41,7 @@ function arc(center:DxfPoint,r:number,start:number,sweep:number,tol:number) {
 
 /** Input entities have already been normalized to mm. No further unit scaling. */
 export function adaptiveEntity(entity:SerulaDxfEntity,tolerance:number):DxfPoint[]|null {
-  if(!Number.isFinite(tolerance)||tolerance<0.001||tolerance>5) throw new Error('Eğri toleransı 0,001–5 mm arasında olmalı.');
+  if(!Number.isFinite(tolerance)||tolerance<0.0005||tolerance>5) throw new Error('Eğri toleransı 0,001–5 mm arasında olmalı.');
   const type=entity.type.toUpperCase();
   if(type==='CIRCLE'||type==='ARC') {
     if(!entity.center||!entity.radius) throw new Error('Yay merkezi/yarıçapı eksik.');

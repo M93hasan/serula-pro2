@@ -2,6 +2,7 @@ import Clipper from 'clipper-lib';
 import type { DxfPoint, NestingPart } from '../dxf/dxfTypes';
 import type { NestingResult, NestingSettings } from './nestingEngine';
 import { booleanPaths, shapePaths, SCALE } from './nfpGeometry';
+import { geometryAllowance } from './geometryAllowance';
 
 const cross=(a:DxfPoint,b:DxfPoint,c:DxfPoint)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
 function distance(p:DxfPoint,a:DxfPoint,b:DxfPoint){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/l)):0;return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);}
@@ -13,13 +14,16 @@ export function ringProblem(input:DxfPoint[]):string|null {
   const points=input.slice();if(points.length>1&&Math.hypot(points[0].x-points.at(-1)!.x,points[0].y-points.at(-1)!.y)<1e-8)points.pop();
   if(points.length<3||points.some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))return 'eksik/geçersiz nokta';
   if(points.some(p=>Math.max(Math.abs(p.x),Math.abs(p.y))>1e7))return 'koordinat sayısal güvenlik aralığı dışında';
-  for(let i=0;i<points.length;i++){
-    const a=points[i],b=points[(i+1)%points.length];
-    if(Math.hypot(a.x-b.x,a.y-b.y)<1e-9)return 'sıfır uzunluklu kenar';
-    for(let j=i+2;j<points.length;j++){
-      if(i===0&&j===points.length-1)continue;
-      if(intersects(a,b,points[j],points[(j+1)%points.length]))return 'kendiyle kesişen kontur';
+  const edges=points.map((a,i)=>{const b=points[(i+1)%points.length];return {a,b,i,minX:Math.min(a.x,b.x),maxX:Math.max(a.x,b.x),minY:Math.min(a.y,b.y),maxY:Math.max(a.y,b.y)};}).sort((a,b)=>a.minX-b.minX);
+  let active:typeof edges=[];
+  for(const edge of edges){
+    if(Math.hypot(edge.a.x-edge.b.x,edge.a.y-edge.b.y)<1e-9)return 'sıfır uzunluklu kenar';
+    active=active.filter(other=>other.maxX>=edge.minX-1e-9);
+    for(const other of active){
+      const delta=Math.abs(edge.i-other.i);if(delta===1||delta===points.length-1||other.maxY<edge.minY-1e-9||other.minY>edge.maxY+1e-9)continue;
+      if(intersects(edge.a,edge.b,other.a,other.b))return 'kendiyle kesişen kontur';
     }
+    active.push(edge);
   }
   const area=points.reduce((sum,p,i)=>sum+p.x*points[(i+1)%points.length].y-p.y*points[(i+1)%points.length].x,0);
   return Math.abs(area)<1e-7?'sıfır alan':null;
@@ -29,6 +33,7 @@ export function validateParts(parts:NestingPart[]) {
   for(const p of parts){
     if(ids.has(p.id))throw new Error(`Tekrarlanan parça kimliği: ${p.id}`);ids.add(p.id);
     if(!Number.isSafeInteger(p.quantity)||p.quantity<0||p.quantity>10000)throw new Error(`${p.name}: geçersiz adet.`);
+    if(p.allowedRotations?.some(r=>!Number.isFinite(r)||r<0||r>=360))throw new Error(`${p.name}: geçersiz dönüş kısıtı.`);
     for(const ring of [p.outerContour,...p.holes]){
       const issue=ring.closed?ringProblem(ring.points):'açık kontur';if(issue)throw new Error(`${p.name}: ${issue}.`);
     }
@@ -36,6 +41,8 @@ export function validateParts(parts:NestingPart[]) {
     for(let i=0;i<p.holes.length;i++){
       const hole=shapePaths({points:p.holes[i].points,holes:[],width:0,height:0});
       if(booleanPaths(hole,outer,Clipper.ClipType.ctDifference).some(r=>Math.abs(Clipper.Clipper.Area(r))>1))throw new Error(`${p.name}: iç kontur dış sınırın dışında.`);
+      const ring=p.holes[i].points,edge=p.outerContour.points;
+      for(let a=0;a<ring.length;a++)for(let b=0;b<edge.length;b++)if(intersects(ring[a],ring[(a+1)%ring.length],edge[b],edge[(b+1)%edge.length]))throw new Error(`${p.name}: iç kontur dış sınıra değiyor/kesişiyor.`);
       for(let j=0;j<i;j++)if(booleanPaths(hole,shapePaths({points:p.holes[j].points,holes:[],width:0,height:0}),Clipper.ClipType.ctIntersection).length)throw new Error(`${p.name}: iç konturlar kesişiyor.`);
     }
   }
@@ -43,7 +50,8 @@ export function validateParts(parts:NestingPart[]) {
 
 /** Separate implementation from the search's fits/shapesConflict and transforms:
  * Boolean solid intersection + exhaustive segment distances, including hole edges. */
-export function validateLayout(parts:NestingPart[],settings:NestingSettings,result:NestingResult) {
+export function validateLayout(parts:NestingPart[],requestedSettings:NestingSettings,result:NestingResult) {
+  const allowance=geometryAllowance(parts),settings={...requestedSettings,spacing:requestedSettings.spacing+2*allowance,margin:requestedSettings.margin+allowance};
   const map=new Map(parts.map(p=>[p.id,p])),counts=new Map<string,number>(),seen=new Set<string>();
   const actual=result.placements.filter(p=>p.placed);
   if(result.totalCount!==parts.reduce((s,p)=>s+p.quantity,0)||result.placements.length!==result.totalCount||actual.length!==result.placedCount||result.unplacedCount!==result.totalCount-actual.length)throw new Error('Sonuç adetleri tutarsız.');
@@ -51,7 +59,7 @@ export function validateLayout(parts:NestingPart[],settings:NestingSettings,resu
     const part=map.get(placement.partId);if(!part)throw new Error('Bilinmeyen parça.');
     const angle=placement.rotation;
     const free=settings.rotations.length===72&&settings.rotations.every((a,i)=>a===i*5);
-    if(!Number.isFinite(angle)||angle<0||angle>=360||(!free&&!settings.rotations.includes(angle))||(free&&Math.abs(angle-Math.round(angle))>1e-8)||(part.lockDirection&&angle!==0)||(part.allowedRotations&&!part.allowedRotations.includes(angle)))throw new Error('Dönüş kısıtı ihlali.');
+    if(!Number.isFinite(angle)||angle<0||angle>=360||(!free&&!settings.rotations.includes(angle))||(free&&!part.allowedRotations&&Math.abs(angle-Math.round(angle))>1e-8)||(part.lockDirection&&angle!==0)||(part.allowedRotations&&!part.allowedRotations.includes(angle)))throw new Error('Dönüş kısıtı ihlali.');
     const c=Math.cos(angle*Math.PI/180),s=Math.sin(angle*Math.PI/180);
     const rotate=(p:DxfPoint)=>({x:(p.x-part.bounds.minX)*c-(p.y-part.bounds.minY)*s,y:(p.x-part.bounds.minX)*s+(p.y-part.bounds.minY)*c});
     const outer=part.outerContour.points.map(rotate),minX=Math.min(...outer.map(p=>p.x)),minY=Math.min(...outer.map(p=>p.y));
