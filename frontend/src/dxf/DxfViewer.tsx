@@ -55,7 +55,6 @@ type DxfViewerProps = {
   entities: SerulaDxfEntity[];
   fileName: string;
   savedLayout?: SavedLayout | null;
-  onCloudSave?: (layout: SavedLayout) => Promise<void>;
   navigation?: { panel: WorkspacePanel | "viewer"; token: number };
 };
 export type SavedLayout = { settings: NestingSettings; spacing: number; quantities: Record<string, number>; result: NestingResult | null; transforms: Record<string, DxfPoint> };
@@ -192,7 +191,7 @@ function createFitView(
 ========================================================= */
 
 export default function DxfViewer({
-  entities, navigation, fileName, savedLayout, onCloudSave,
+  entities, navigation, fileName, savedLayout,
 }: DxfViewerProps) {
   const canvasRef =
     useRef<HTMLCanvasElement>(
@@ -2027,7 +2026,6 @@ export default function DxfViewer({
               catch (error) { setNestingError(error instanceof Error ? error.message : 'Dışa aktarma başarısız.'); }
             }}>↓ DXF Kaydet</button>
           )}
-          {onCloudSave && <button type="button" disabled={isNesting} onClick={() => void onCloudSave({ settings: operatorSettings, spacing: partSpacing, quantities, result: nestingResult, transforms })}>Buluta Kaydet</button>}
 
           {nestingResult && (
             <>

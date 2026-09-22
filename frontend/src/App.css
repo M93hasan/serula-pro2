@@ -1,10 +1,6 @@
 * {
   box-sizing: border-box;
 }
-.cloud-projects { background:#fff; border:1px solid #e1e7f0; border-radius:14px; padding:14px 18px; margin-bottom:16px; }
-.cloud-projects strong { display:block; font-size:12px; color:#52637b; margin-bottom:10px; }
-.cloud-projects div { display:flex; flex-wrap:wrap; gap:8px; }
-.cloud-projects button,.sidebar-footer button { border:1px solid #dbe3ee; border-radius:8px; background:#fff; padding:8px 12px; cursor:pointer; }
 .app-error { padding:12px 16px; margin-bottom:15px; color:#a72828; background:#fff0f0; border-radius:10px; }
 .topbar-title { display:flex; align-items:center; gap:12px; }
 .version-badge { display:inline-flex; align-items:center; border:1px solid #c8d7ed; border-radius:999px; padding:5px 9px; color:#2c5ca3; background:#eef5ff; font-size:12px; font-weight:700; white-space:nowrap; }

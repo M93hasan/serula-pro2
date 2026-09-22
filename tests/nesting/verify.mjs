@@ -85,7 +85,8 @@ assert.equal(runNesting(restricted,{...DEFAULT_NESTING_SETTINGS,rotations:[0]}).
 assert.throws(()=>runNesting(parts,{...DEFAULT_NESTING_SETTINGS,spacing:-1}));
 assert.throws(()=>runNesting(parts,{...DEFAULT_NESTING_SETTINGS,rotations:[]}));
 const square=[{x:0,y:0},{x:10,y:0},{x:10,y:10},{x:0,y:10}];
-assert(polygonsConflict(square,square.map(p=>({x:p.x+10,y:p.y})),0));
+assert(!polygonsConflict(square,square.map(p=>({x:p.x+10,y:p.y})),0));
+assert(polygonsConflict(square,square,0));
 assert(polygonsConflict(square,square.map(p=>({x:p.x+10.29,y:p.y})),0.3));
 assert(!polygonsConflict(square,square.map(p=>({x:p.x+10.31,y:p.y})),0.3));
 assert(isBetterResult({...result,placedCount:32,usedHeight:999},{...result,placedCount:31,usedHeight:100}));

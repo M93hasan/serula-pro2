@@ -1,5 +1,5 @@
 import type { DxfPoint, NestingPart, SerulaCurve, SerulaDxfEntity } from './dxfTypes';
-import { polygonsConflict, transformNestingPoint, type NestingPlacement, type NestingResult, type NestingSettings } from '../nesting/nestingEngine';
+import { shapesConflict, transformNestingPoint, type NestingPlacement, type NestingResult, type NestingSettings } from '../nesting/nestingEngine';
 
 type ExportCurve = { curve: SerulaCurve; entity: SerulaDxfEntity; part: NestingPart; placement: NestingPlacement };
 const number = (value: number) => {
@@ -18,10 +18,10 @@ export function prepareExport(result: NestingResult, parts: NestingPart[], curve
     if (!part) throw new Error('Yerleşim güncel değil. Yeniden hesaplayın.');
     const points = part.outerContour.points.map(point => transformNestingPoint(point, part, p));
     if (points.some(point => point.x < settings.margin - 1e-7 || point.y < settings.margin - 1e-7 || point.x > result.materialWidth - settings.margin + 1e-7 || point.y > result.materialHeight - settings.margin + 1e-7)) throw new Error('Bir parça malzeme sınırı dışında. Taşımayı sıfırlayın veya yeniden yerleştirin.');
-    return points;
+    return { points, holes: part.holes.map(hole => hole.points.map(point => transformNestingPoint(point, part, p))), width: part.bounds.width, height: part.bounds.height };
   });
   for (let i = 0; i < polygons.length; i++) for (let j = i + 1; j < polygons.length; j++) {
-    if (polygonsConflict(polygons[i], polygons[j], Math.max(0, settings.spacing - 1e-8))) throw new Error('Parçalar çakışıyor veya parça aralığı yetersiz. Taşımayı sıfırlayın veya yeniden yerleştirin.');
+    if (shapesConflict(polygons[i], polygons[j], Math.max(0, settings.spacing - 1e-8))) throw new Error('Parçalar çakışıyor veya parça aralığı yetersiz. Taşımayı sıfırlayın veya yeniden yerleştirin.');
   }
   const exported: ExportCurve[] = [];
   for (const placement of placed) for (const curve of curves) if (owners.get(curve.id) === placement.partId) {
@@ -31,7 +31,7 @@ export function prepareExport(result: NestingResult, parts: NestingPart[], curve
   }
   const right = settings.startCorner.endsWith('right'), top = settings.startCorner.startsWith('top');
   let usedWidth = 0, usedHeight = 0;
-  for (const polygon of polygons) for (const point of polygon) {
+  for (const polygon of polygons) for (const point of polygon.points) {
     usedWidth = Math.max(usedWidth, right ? result.materialWidth - point.x : point.x);
     usedHeight = Math.max(usedHeight, top ? result.materialHeight - point.y : point.y);
   }

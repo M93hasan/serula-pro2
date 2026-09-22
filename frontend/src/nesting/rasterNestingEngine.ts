@@ -113,7 +113,7 @@ export function runRasterNesting(parts: NestingPart[], settings: NestingSettings
     const x=best.x,y=best.y,shape=best.mask.shape;
     const gx=Math.floor((x-settings.margin)/cell),gy=Math.floor((y-settings.margin)/cell);
     const dx=x-settings.margin-gx*cell,dy=y-settings.margin-gy*cell;
-    const placedMask=rasterize({points:shape.points.map(p=>({x:p.x+dx,y:p.y+dy})),width:shape.width+dx,height:shape.height+dy},best.mask.rotation,cell);
+    const placedMask=rasterize({holes: [], points:shape.points.map(p=>({x:p.x+dx,y:p.y+dy})),width:shape.width+dx,height:shape.height+dy},best.mask.rotation,cell);
     occupy(placedMask,grid,stride,columns,rows,gx,gy,Math.ceil(settings.spacing/cell));
     accepted.push({...shape,x,y,points:shape.points.map(p=>({x:p.x+x,y:p.y+y}))});
     placements.push({partId:part.id,instanceId,x,y,rotation:best.mask.rotation,placed:true});

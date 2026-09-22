@@ -14,6 +14,8 @@ const entities=[
 ].map(e=>({...e,layer:'CUT',color}));
 const curves=createCurvesFromEntities(entities);
 const part={id:'part',bounds:{minX:-20,minY:-20,maxX:20,maxY:20,width:40,height:40}};
+part.outerContour={closed:true,points:[{x:part.bounds.minX,y:part.bounds.minY},{x:part.bounds.maxX,y:part.bounds.minY},{x:part.bounds.maxX,y:part.bounds.maxY},{x:part.bounds.minX,y:part.bounds.maxY}]};
+part.holes=[];
 for(const rotation of [0,45,90,180,270]){
  const placement={partId:'part',instanceId:'part-0',placed:true,x:50,y:50,rotation};
  const items=entities.map((entity,i)=>({entity,part,placement,curve:curves[i]}));

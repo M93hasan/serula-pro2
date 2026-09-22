@@ -3,6 +3,8 @@ import { writeFileSync } from 'node:fs';
 import DxfParser from 'dxf-parser';
 import { createDxfExport } from '../../frontend/src/dxf/nestingExport.ts';
 const part = { id:'part', bounds:{ minX:0,minY:0,maxX:10,maxY:10,width:10,height:10 } };
+part.outerContour={closed:true,points:[{x:part.bounds.minX,y:part.bounds.minY},{x:part.bounds.maxX,y:part.bounds.minY},{x:part.bounds.maxX,y:part.bounds.maxY},{x:part.bounds.minX,y:part.bounds.maxY}]};
+part.holes=[];
 const placement = { partId:'part',instanceId:'part-0',x:20,y:30,rotation:0,placed:true };
 const color = { aci:1,hex:'#ff0000',source:'entity' };
 const items = [
