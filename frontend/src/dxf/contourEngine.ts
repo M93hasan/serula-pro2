@@ -1,3 +1,4 @@
+import { strictlyContainsContour } from './contourContainment';
 import type {
   DxfPoint,
   GeometryBounds,
@@ -368,53 +369,6 @@ function curveToContour(
    CONTOUR İÇİN TEST NOKTASI
 ========================================================= */
 
-function getContourTestPoint(
-  contour: SerulaContour,
-): DxfPoint {
-  /*
-   * Polygon'un ilk noktasını kullanmak yerine
-   * bounds merkezini deniyoruz.
-   *
-   * Eğer merkez polygon içinde değilse
-   * ilk noktaya yakın bir iç nokta
-   * oluşturmaya çalışıyoruz.
-   */
-
-  const center: DxfPoint = {
-    x:
-      (contour.bounds.minX +
-        contour.bounds.maxX) /
-      2,
-
-    y:
-      (contour.bounds.minY +
-        contour.bounds.maxY) /
-      2,
-  };
-
-  if (
-    pointInPolygon(
-      center,
-      contour.points,
-    )
-  ) {
-    return center;
-  }
-
-  const first =
-    contour.points[0];
-
-  return {
-    x:
-      first.x * 0.99 +
-      center.x * 0.01,
-
-    y:
-      first.y * 0.99 +
-      center.y * 0.01,
-  };
-}
-
 /* =========================================================
    CONTOUR DEPTH
 ========================================================= */
@@ -444,11 +398,6 @@ function calculateContourDepth(
   contour: SerulaContour,
   contours: SerulaContour[],
 ): number {
-  const testPoint =
-    getContourTestPoint(
-      contour,
-    );
-
   let depth = 0;
 
   for (
@@ -490,10 +439,7 @@ function calculateContourDepth(
      * Sonra gerçek polygon testi.
      */
     if (
-      pointInPolygon(
-        testPoint,
-        possibleParent.points,
-      )
+      strictlyContainsContour(possibleParent, contour)
     ) {
       depth++;
     }

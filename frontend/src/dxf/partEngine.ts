@@ -1,6 +1,6 @@
+import { strictlyContainsContour } from './contourContainment';
 import type {
   DxfPoint,
-  GeometryBounds,
   NestingPart,
   SerulaContour,
   SerulaCurve,
@@ -13,102 +13,6 @@ import {
 /* =========================================================
    AYARLAR
 ========================================================= */
-
-const TOLERANCE = 0.01;
-
-/* =========================================================
-   BOUNDS
-========================================================= */
-
-function boundsContains(
-  outer: GeometryBounds,
-  inner: GeometryBounds,
-): boolean {
-  return (
-    inner.minX >=
-      outer.minX - TOLERANCE &&
-    inner.maxX <=
-      outer.maxX + TOLERANCE &&
-    inner.minY >=
-      outer.minY - TOLERANCE &&
-    inner.maxY <=
-      outer.maxY + TOLERANCE
-  );
-}
-
-/* =========================================================
-   TEST NOKTASI
-========================================================= */
-
-function getTestPoint(
-  contour: SerulaContour,
-): DxfPoint {
-  const center: DxfPoint = {
-    x:
-      (contour.bounds.minX +
-        contour.bounds.maxX) /
-      2,
-
-    y:
-      (contour.bounds.minY +
-        contour.bounds.maxY) /
-      2,
-  };
-
-  if (
-    pointInPolygon(
-      center,
-      contour.points,
-    )
-  ) {
-    return center;
-  }
-
-  const first =
-    contour.points[0];
-
-  return {
-    x:
-      first.x * 0.99 +
-      center.x * 0.01,
-
-    y:
-      first.y * 0.99 +
-      center.y * 0.01,
-  };
-}
-
-/* =========================================================
-   CONTOUR CONTAINMENT
-========================================================= */
-
-function contourContainsContour(
-  outer: SerulaContour,
-  inner: SerulaContour,
-): boolean {
-  if (
-    outer.id === inner.id
-  ) {
-    return false;
-  }
-
-  if (
-    !boundsContains(
-      outer.bounds,
-      inner.bounds,
-    )
-  ) {
-    return false;
-  }
-
-  const point =
-    getTestPoint(inner);
-
-  return pointInPolygon(
-    point,
-    outer.points,
-  );
-}
 
 /* =========================================================
    CURVE TEST NOKTASI
@@ -260,7 +164,7 @@ function findDirectHoles(
     allContours.filter(
       (contour) =>
         contour.role === "hole" &&
-        contourContainsContour(
+        strictlyContainsContour(
           outerContour,
           contour,
         ),
@@ -321,11 +225,11 @@ function findDirectHoles(
             }
 
             return (
-              contourContainsContour(
+              strictlyContainsContour(
                 outerContour,
                 candidate,
               ) &&
-              contourContainsContour(
+              strictlyContainsContour(
                 candidate,
                 hole,
               )
@@ -491,13 +395,10 @@ export function getCurvesForPart(
   part: NestingPart,
   allCurves: SerulaCurve[],
 ): SerulaCurve[] {
-  return allCurves.filter(
-    (curve) =>
-      curveBelongsToPart(
-        curve,
-        part.outerContour,
-      ),
-  );
+  const contourCurves = new Set([part.outerContour, ...part.holes].flatMap(contour => contour.curves.map(curve => curve.id)));
+  return allCurves.filter(curve => curve.closed
+    ? contourCurves.has(curve.id)
+    : curveBelongsToPart(curve, part.outerContour));
 }
 
 /* =========================================================
