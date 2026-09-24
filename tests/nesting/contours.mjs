@@ -20,6 +20,13 @@ for (const part of parts) assert.deepEqual(getCurvesForPart(part,crossing).map(c
 const job = createJobGeometry(parts,crossing,{});
 assert.equal(job.curvePartMap.size,2);
 assert.equal(new Set(job.curvePartMap.values()).size,2);
+for (const quantity of [0,101,1000]) {
+  const copies = createJobGeometry([parts[0]],[crossing[0]],{[parts[0].id]:quantity});
+  assert.equal(copies.parts.length,quantity);
+  assert.equal(new Set(copies.parts.map(p=>p.id)).size,quantity);
+  assert.equal(copies.curvePartMap.size,quantity);
+}
+for (const quantity of [-1,0.5,1001,NaN]) assert.throws(()=>createJobGeometry(parts,crossing,{[parts[0].id]:quantity}));
 const settings = {...DEFAULT_NESTING_SETTINGS,sheetWidth:220,sheetHeight:220,margin:1,spacing:1,rotations:[0]};
 const run = await runGlsNesting(job.parts,settings,{timeBudgetMs:1000,maxIterations:3});
 assert.equal(run.result.placedCount,2);

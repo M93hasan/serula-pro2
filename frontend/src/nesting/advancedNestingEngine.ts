@@ -1,4 +1,4 @@
-﻿import { runNesting, compactNesting, type NestingResult, type NestingSettings } from './nestingEngine';
+﻿import { runNesting, compactNesting, groupSimilarParts, type NestingResult, type NestingSettings } from './nestingEngine';
 import type { NestingPart } from '../dxf/dxfTypes';
 import { calculateAbsoluteArea } from '../dxf/contourEngine';
 export interface AdvancedNestingOptions { maxTrials?: number }
@@ -26,7 +26,8 @@ export function runAdvancedNesting(parts: NestingPart[], settings: NestingSettin
   let best: NestingResult | undefined, bestTrialIndex = 0;
   for (let i = 0; i < limit; i++) {
     const metric = metrics[i < metrics.length ? i : 7];
-    const ordered = [...parts].sort((a, b) => metric(b) - metric(a));
+    // Metric sweeps happen inside similarity groups so alike parts stay neighbours.
+    const ordered = groupSimilarParts(parts, (a, b) => metric(b) - metric(a));
     const result = runNesting(ordered, settings, { preserveOrder: true, searchStep: i === 0 ? undefined : i === 8 ? 20 : 40, candidateLimit: i === 8 ? 4 : i === 9 ? 8 : 1 });
     if (!best || isBetterResult(result, best)) { best = result; bestTrialIndex = i; }
   }

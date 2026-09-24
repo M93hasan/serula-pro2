@@ -1,7 +1,7 @@
 import Clipper from 'clipper-lib';
 import type { NestingPart } from '../dxf/dxfTypes';
 import { calculateAbsoluteArea } from '../dxf/contourEngine';
-import { polygon, fits, createPartInstances, validateSettings, type NestingPolygon, type NestingPlacement, type NestingResult, type NestingSettings } from './nestingEngine';
+import { polygon, fits, createPartInstances, similarityRanks, validateSettings, type NestingPolygon, type NestingPlacement, type NestingResult, type NestingSettings } from './nestingEngine';
 import { booleanPaths, fromPath, innerFit, NfpCache, SCALE, translatedPaths } from './nfpGeometry';
 import { validateLayout, validateParts } from './validateLayout';
 import { geometryAllowance } from './geometryAllowance';
@@ -33,7 +33,8 @@ export async function runGlsNesting(parts:NestingPart[],requestedSettings:Nestin
   const budget=options.timeBudgetMs??settings.timeBudgetMs??10000;
   if(!Number.isFinite(budget)||budget<1||budget>300000)throw new Error('Süre bütçesi 1–300000 ms arasında olmalı.');
   validateSettings(requestedSettings);validateSettings(settings);validateParts(parts);
-  const instances=createPartInstances(parts),width=settings.materialType==='roll'?settings.rollWidth:settings.sheetWidth;
+  const instances=createPartInstances(parts),ranks=similarityRanks(parts),rankOf=(instance:Instance)=>ranks.get(instance.part.id)??-1,
+    width=settings.materialType==='roll'?settings.rollWidth:settings.sheetWidth;
   const height=settings.materialType==='roll'?Math.max(settings.margin*2+1,instances.reduce((v,{part})=>v+Math.hypot(part.bounds.width,part.bounds.height)+settings.spacing,settings.margin*2)):settings.sheetHeight;
   const right=settings.startCorner.endsWith('right'),top=settings.startCorner.startsWith('top');
   const cache=options.cache??new NfpCache(),shapes=new Map<string,NestingPolygon>();
@@ -57,9 +58,23 @@ export async function runGlsNesting(parts:NestingPart[],requestedSettings:Nestin
   };
   let bestPositions:Position[]=[],best=resultOf([]);
   const publish=(force=false)=>{if(!force&&performance.now()-lastPublish<200)return;lastPublish=performance.now();options.onProgress?.({result:best,elapsedMs:performance.now()-start,iterations,penaltyUpdates,phase,cacheHits:cache.hits,cacheMisses:cache.misses});};
+  // Bounding boxes that touch belong to different similarity groups: a mixed
+  // neighbourhood reads as scattered parts instead of a manual side-by-side run.
+  const groupingCost=(positions:Position[])=>{
+    const reach=settings.spacing+2;let mixed=0;
+    for(let i=0;i<positions.length;i++)for(let j=0;j<i;j++){
+      const a=positions[i],b=positions[j];
+      if(a.sheet!==b.sheet||rankOf(a.instance)===rankOf(b.instance))continue;
+      if(a.x>b.x+b.shape.width+reach||b.x>a.x+a.shape.width+reach||a.y>b.y+b.shape.height+reach||b.y>a.y+a.shape.height+reach)continue;
+      mixed++;
+    }
+    return mixed;
+  };
   const keep=(positions:Position[])=>{
-    const result=resultOf(positions);
-    if(compareLayouts(result,best,settings)<-1e-7){validateLayout(parts,requestedSettings,result);best=result;bestPositions=[...positions];publish();}
+    const result=resultOf(positions),comparison=compareLayouts(result,best,settings);
+    // Material wins outright; equal layouts prefer fewer mixed-group contacts.
+    const better=comparison<-1e-7||(Math.abs(comparison)<=1e-7&&groupingCost(positions)<groupingCost(bestPositions)-1e-7);
+    if(better){validateLayout(parts,requestedSettings,result);best=result;bestPositions=[...positions];publish();}
   };
   const find=async(instance:Instance,positions:Position[],sheet:number,ceiling=height,angles=allowed(instance.part,settings),quick=false):Promise<Position|undefined>=>{
     const others=positions.filter(p=>p.sheet===sheet),world=others.map(positioned);
@@ -123,7 +138,8 @@ export async function runGlsNesting(parts:NestingPart[],requestedSettings:Nestin
         if(!chosen&&angles.length!==allAngles.length)chosen=await find(instance,positions,sheet,height,allAngles,quick);
         const occupied=positions.filter(p=>p.sheet===sheet).reduce((v,p)=>Math.max(v,p.y+p.shape.height),settings.margin);
         if(!quick&&occupied>settings.margin&&(!chosen||chosen.y+chosen.shape.height>occupied+1e-7)){
-          const small=pending.map((item,i)=>({item,i})).slice(1).sort((a,b)=>area(a.item.part)-area(b.item.part));
+          const ownRank=rankOf(instance);
+          const small=pending.map((item,i)=>({item,i})).slice(1).sort((a,b)=>((rankOf(a.item)===ownRank?0:1)-(rankOf(b.item)===ownRank?0:1))||area(a.item.part)-area(b.item.part));
           for(const candidate of small){const cavity=await find(candidate.item,positions,sheet,occupied+settings.margin);if(cavity){chosen=cavity;index=candidate.i;break;}}
         }
         if(chosen)break;
@@ -141,13 +157,17 @@ export async function runGlsNesting(parts:NestingPart[],requestedSettings:Nestin
   const penalties=new Map<string,number>();
   const features=(positions:Position[])=>positions.map(p=>({key:`${p.instance.instanceId}:${p.sheet}:${p.rotation}:${Math.floor(p.x/20)}:${Math.floor(p.y/20)}`,cost:1+p.sheet+(p.y+p.shape.height)/Math.max(1,height),position:p}));
   const scalar=(positions:Position[])=>{const r=resultOf(positions);return settings.materialType==='sheet'?(r.sheetCount??0)+(r.sheets?.at(-1)?.usedHeight??0)/(height+1):r.usedHeight/height;};
-  const augmented=(positions:Position[])=>scalar(positions)+0.15/Math.max(1,instances.length)*features(positions).reduce((s,f)=>s+(penalties.get(f.key)??0),0);
+  const augmented=(positions:Position[])=>scalar(positions)+0.35*groupingCost(positions)/Math.max(1,positions.length)+0.15/Math.max(1,instances.length)*features(positions).reduce((s,f)=>s+(penalties.get(f.key)??0),0);
   publish(true);
   try {
     // Cheap feasible incumbent is insurance for short budgets/cancellation. It is
     // not called NFP: every contact is checked on the real solid before accepting.
     phase='Güvenli başlangıç';let current=await pack(instances,[],new Map(),true);keep(current);publish(true);
-    const orders=[instances,[...instances].sort((a,b)=>b.part.bounds.height-a.part.bounds.height),[...instances].sort((a,b)=>b.part.bounds.width-a.part.bounds.width)];
+    // Alternate seeds re-sort inside each similarity group so height/width sweeps
+    // never interleave unrelated parts.
+    const orders=[instances,
+      [...instances].sort((a,b)=>rankOf(a)-rankOf(b)||b.part.bounds.height-a.part.bounds.height),
+      [...instances].sort((a,b)=>rankOf(a)-rankOf(b)||b.part.bounds.width-a.part.bounds.width)];
     phase='Temas başlangıçları';seedStep=40;
     for(const order of orders.slice(1)){
       if(performance.now()-start>budget*0.3)break;

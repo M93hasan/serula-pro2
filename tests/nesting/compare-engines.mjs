@@ -1,4 +1,4 @@
-﻿import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
+import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import DxfParser from 'dxf-parser';
@@ -53,5 +53,5 @@ if(!isMainThread){
   const validation=validateLayout(parts,settings,last.result),r=last.result;
   const report={source:'00.dxf (repository fixture; 32 parts)',engine,budgetMs:budget,settings,placed:r.placedCount,requested:r.totalCount,unplaced:r.unplacedCount,sheets:materialType==='sheet'?(r.sheetCount??1):null,usedLengthMm:materialType==='roll'?r.materialHeight:null,lastSheetUsedHeightMm:materialType==='sheet'?r.usedHeight:null,wastePercent:100-r.efficiency,elapsedMs:last.totalElapsed,lastReportedIncumbentMs:last.elapsed,iterations:last.iterations,penaltyUpdates:last.penaltyUpdates,validation};reports.push(report);console.log(JSON.stringify(report));
  }
- writeFileSync('docs/nesting/benchmark-v0.0.4.json',JSON.stringify(reports,null,2)+'\n');
+ writeFileSync(process.env.NESTING_REPORT ?? 'storage/benchmark-latest.json',JSON.stringify(reports,null,2)+'\n');
 }

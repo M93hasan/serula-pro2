@@ -11,7 +11,7 @@ export function createJobGeometry(catalogue: NestingPart[], sourceCurves: Serula
   const curvePartMap = new Map<string, string>();
   for (const part of catalogue) {
     const quantity = quantities[part.id] ?? 1;
-    if (!Number.isInteger(quantity) || quantity < 0 || quantity > 100) throw new Error('Parça adedi 0–100 arasında olmalı.');
+    if (!Number.isInteger(quantity) || quantity < 0 || quantity > 1000) throw new Error('Parça adedi 0–1000 arasında olmalı.');
     const attached = sourceCurves.filter(curve => owners.get(curve.id) === part.id);
     for (let i = 0; i < quantity; i++) {
       const id = i === 0 ? part.id : `${part.id}:copy-${i}`;

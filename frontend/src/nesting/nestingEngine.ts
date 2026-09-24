@@ -172,9 +172,38 @@ export function validateSettings(settings: NestingSettings): void {
   if (!settings.rotations.length || settings.rotations.some(r => !Number.isFinite(r) || r < 0 || r >= 360)) throw new Error('Geçerli bir dönüş açısı seçin.');
   if ((settings.materialType === 'roll' ? settings.rollWidth : settings.sheetWidth) <= 2 * settings.margin || settings.sheetHeight <= 2 * settings.margin) throw new Error('Kenar payı malzeme ölçüsünden büyük.');
 }
+const netArea = (part: NestingPart) => calculateAbsoluteArea(part.outerContour.points) - part.holes.reduce((sum, hole) => sum + calculateAbsoluteArea(hole.points), 0);
+const nearValue = (a: number, b: number, ratio: number, slack: number) => Math.abs(a - b) <= Math.max(slack, ratio * Math.max(a, b));
+/** Similar pieces share normalized bounds (rotation agnostic) and net area. */
+export function isSimilarPart(a: NestingPart, b: NestingPart): boolean {
+  const aw = Math.min(a.bounds.width, a.bounds.height), ah = Math.max(a.bounds.width, a.bounds.height);
+  const bw = Math.min(b.bounds.width, b.bounds.height), bh = Math.max(b.bounds.width, b.bounds.height);
+  return nearValue(aw, bw, 0.05, 2) && nearValue(ah, bh, 0.05, 2) && nearValue(netArea(a), netArea(b), 0.15, 4);
+}
+/** Greedy similarity clusters, largest piece first so a cluster's head anchors its order. */
+export function similarityGroups(parts: NestingPart[]): NestingPart[][] {
+  const groups: NestingPart[][] = [];
+  for (const part of [...parts].sort((a, b) => netArea(b) - netArea(a))) {
+    const group = groups.find(candidate => isSimilarPart(part, candidate[0]));
+    if (group) group.push(part); else groups.push([part]);
+  }
+  return groups;
+}
+export function similarityRanks(parts: NestingPart[]): Map<string, number> {
+  const ranks = new Map<string, number>();
+  similarityGroups(parts).forEach((group, index) => group.forEach(part => ranks.set(part.id, index)));
+  return ranks;
+}
+/** Keeps similar parts contiguous so neighbours on the sheet stay alike, the way a manual layout is composed. */
+export function groupSimilarParts(parts: NestingPart[], compare: (a: NestingPart, b: NestingPart) => number = (a, b) => netArea(b) - netArea(a)): NestingPart[] {
+  return similarityGroups(parts)
+    .map(group => ({ group, lead: group.reduce((best, part) => compare(part, best) < 0 ? part : best) }))
+    .sort((a, b) => compare(a.lead, b.lead) || netArea(b.lead) - netArea(a.lead))
+    .flatMap(({ group }) => [...group].sort(compare));
+}
 // Ordering is explicit: strategies never overwrite the actual contour area.
 export function createPartInstances(parts: NestingPart[], preserveOrder = false) {
-  const ordered = preserveOrder ? [...parts] : [...parts].sort((a, b) => calculateAbsoluteArea(b.outerContour.points) - calculateAbsoluteArea(a.outerContour.points));
+  const ordered = preserveOrder ? [...parts] : groupSimilarParts(parts);
   return ordered.flatMap(part => {
     if (!Number.isSafeInteger(part.quantity) || part.quantity < 0 || part.quantity > 10000) throw new Error('Geçersiz parça adedi.');
     if (!Object.values(part.bounds).every(Number.isFinite) || part.bounds.width <= 0 || part.bounds.height <= 0) throw new Error(`${part.name}: geçersiz parça ölçüleri.`);
@@ -191,6 +220,7 @@ export function runNesting(parts: NestingPart[], settings: NestingSettings = DEF
   const width = settings.materialType === 'roll' ? settings.rollWidth : settings.sheetWidth;
   const height = settings.materialType === 'roll' ? instances.reduce((sum, { part }) => sum + Math.max(part.bounds.width, part.bounds.height) + settings.spacing, settings.margin * 2) : settings.sheetHeight;
   const placed: Positioned[] = [], placements: NestingPlacement[] = [];
+  const ranks = similarityRanks(parts);
   const cache = new Map<string, Polygon>();
   const fromRight = settings.startCorner.endsWith('right');
   const fromTop = settings.startCorner.startsWith('top');
@@ -262,8 +292,12 @@ export function runNesting(parts: NestingPart[], settings: NestingSettings = DEF
     let best = findPlacement(pending[0].part);
     const occupiedHeight = placed.reduce((max, p) => Math.max(max, fromTop ? height - p.y : p.y + p.height), settings.margin);
     if (placed.length && (!best || (fromTop ? height - best.y : best.y + best.shape.height) > occupiedHeight + EPS)) {
+      // Cavity fill prefers the frontier's own similarity group so foreign pieces
+      // do not split a run of alike parts.
+      const leadRank = ranks.get(pending[0].part.id) ?? -1;
       const smallFirst = pending.map((item, i) => ({ ...item, i })).slice(1)
-        .sort((a, b) => calculateAbsoluteArea(a.part.outerContour.points) - calculateAbsoluteArea(b.part.outerContour.points));
+        .sort((a, b) => ((ranks.get(a.part.id) === leadRank ? 0 : 1) - (ranks.get(b.part.id) === leadRank ? 0 : 1)) ||
+          calculateAbsoluteArea(a.part.outerContour.points) - calculateAbsoluteArea(b.part.outerContour.points));
       const checked = new Set<string>();
       for (const item of smallFirst) {
         if (checked.has(item.part.id)) continue;

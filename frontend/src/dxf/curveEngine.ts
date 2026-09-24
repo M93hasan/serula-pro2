@@ -296,7 +296,7 @@ function evaluateArc(
     return [];
   }
 
-  let startAngle =
+  const startAngle =
     normalizeAngle(
       entity.startAngle ?? 0,
     );
@@ -448,7 +448,7 @@ function evaluateEllipse(
       majorAxis.x,
     );
 
-  let start =
+  const start =
     entity.startParameter ?? 0;
 
   let end =
@@ -607,7 +607,7 @@ function evaluateBulgeSegment(
       centerDistance *
       side;
 
-  let startAngle =
+  const startAngle =
     Math.atan2(
       start.y - centerY,
       start.x - centerX,

@@ -222,10 +222,15 @@ export default function DxfViewer({
   const [quantities, setQuantities] = useState<Record<string, number>>(savedLayout?.quantities ?? {});
   const previousEntities = useRef(entities);
   const previousSettings = useRef({ operatorSettings, partSpacing, quantities });
+  const [lastNavigation, setLastNavigation] = useState(navigation);
+  if (navigation !== lastNavigation) {
+    setLastNavigation(navigation);
+    if (navigation?.token && navigation.panel !== "viewer") setPanel(navigation.panel);
+  }
   useEffect(() => {
     if (!navigation?.token) return;
     if (navigation.panel === "viewer") canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    else { setPanel(navigation.panel); document.getElementById("workspace-controls")?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    else document.getElementById("workspace-controls")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [navigation]);
 
   const [view, setView] =
@@ -413,9 +418,11 @@ export default function DxfViewer({
       { type: "module" },
     );
     } catch (error) {
-      setNestingError(error instanceof Error ? error.message : "Yerleşim işlemi başlatılamadı.");
-      setIsNesting(false);
-      return;
+      const timer = window.setTimeout(() => {
+        setNestingError(error instanceof Error ? error.message : "Yerleşim işlemi başlatılamadı.");
+        setIsNesting(false);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
 
     nestingWorkerRef.current = worker;
@@ -445,7 +452,7 @@ export default function DxfViewer({
       setSearchStatus(`${response.phase} · ${(response.duration / 1000).toFixed(1)} sn · bağımsız doğrulama tamamlandı`);
       setVisiblePlacementCount(autoSimulation ? 0 : response.result.placedCount);
       setIsSimulationPaused(false);
-      setIsSimulating(autoSimulation);
+      setIsSimulating(autoSimulation && response.result.placedCount > 0);
       setIsNesting(false);
       setNestingError(null);
     };
@@ -615,36 +622,16 @@ export default function DxfViewer({
           placement.placed,
       ).length;
 
-    if (
-      visiblePlacementCount >=
-      placedCount
-    ) {
-      setIsSimulating(
-        false,
-      );
+    if (visiblePlacementCount >= placedCount) return;
 
-      setIsSimulationPaused(
-        false,
-      );
-
-      return;
-    }
-
-    simulationTimerRef.current =
-      window.setTimeout(
-        () => {
-          setVisiblePlacementCount(
-            (current) =>
-              Math.min(
-                current + 1,
-                placedCount,
-              ),
-          );
-        },
-        SIMULATION_SPEEDS[
-          simulationSpeed
-        ],
-      );
+    simulationTimerRef.current = window.setTimeout(() => {
+      const next = Math.min(visiblePlacementCount + 1, placedCount);
+      setVisiblePlacementCount(next);
+      if (next >= placedCount) {
+        setIsSimulating(false);
+        setIsSimulationPaused(false);
+      }
+    }, SIMULATION_SPEEDS[simulationSpeed]);
 
     return () => {
       if (
@@ -1381,6 +1368,7 @@ export default function DxfViewer({
     );
   }, [
     curves,
+    catalogue,
     parts,
     curvePartMap,
     placementMap,
