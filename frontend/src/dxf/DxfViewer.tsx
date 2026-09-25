@@ -1747,7 +1747,7 @@ export default function DxfViewer({
      AUTO NESTING + SIMULATION
   ======================================================= */
 
-  const handleAutoNesting =
+  const handleAutoNesting = useCallback(
     (requestedParts: NestingPart[] = parts) => {
       const worker =
         nestingWorkerRef.current;
@@ -1779,7 +1779,9 @@ export default function DxfViewer({
         setIsNesting(false);
         setNestingError(error instanceof Error ? error.message : "Yerleşim başlatılamadı.");
       }
-    };
+    },
+    [parts, nestingWorkerRef, isNesting, geometry, operatorSettings, partSpacing]
+  );
 
   /* =======================================================
      RESET NESTING
