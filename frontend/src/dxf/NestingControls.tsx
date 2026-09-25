@@ -100,7 +100,7 @@ export default function NestingControls(props: Props) {
       <header className="controls-heading">
         <div>
           <div className="section-kicker">Çalışma Alanı</div>
-          <h2 style={{ color: '#ff0000' }}>Yerleşim v0.0.1</h2>
+          <h2 style={{ display: 'none' }}>Yerleşim v0.0.9</h2>
         </div>
         <span className="job-badge">
           <i />
