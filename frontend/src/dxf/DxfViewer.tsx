@@ -228,10 +228,14 @@ export default function DxfViewer({
     if (navigation?.token && navigation.panel !== "viewer") setPanel(navigation.panel);
   }
   useEffect(() => {
-    if (!navigation?.token) return;
-    if (navigation.panel === "viewer") canvasRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    else document.getElementById("workspace-controls")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [navigation]);
+    const handleStart = () => {
+      if (entities.length) {
+        handleAutoNesting();
+      }
+    };
+    window.addEventListener('start-nesting', handleStart);
+    return () => window.removeEventListener('start-nesting', handleStart);
+  }, [entities, handleAutoNesting]);
 
   const [view, setView] =
     useState<ViewState>({
