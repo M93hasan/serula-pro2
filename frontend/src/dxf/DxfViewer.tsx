@@ -230,12 +230,14 @@ export default function DxfViewer({
   useEffect(() => {
     const handleStart = () => {
       if (entities.length) {
+        // Use the function defined below
+        // @ts-ignore
         handleAutoNesting();
       }
     };
     window.addEventListener('start-nesting', handleStart);
     return () => window.removeEventListener('start-nesting', handleStart);
-  }, [entities, handleAutoNesting]);
+  }, [entities]);
 
   const [view, setView] =
     useState<ViewState>({
