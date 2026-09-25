@@ -1,4 +1,4 @@
-import { adaptiveEntity, simplifyCurve } from './adaptiveGeometry';
+import { adaptiveEntity, simplifyCurve } from './adaptiveGeometry.js';
 import type {
   DxfPoint,
   SerulaCurve,
