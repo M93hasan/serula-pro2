@@ -1,0 +1,20 @@
+[33m0383e18[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Release v0.7.0 - NestingControls modern tasarım ve export paneli iyileştirmeleri
+[33m15facde[m Fix full-contour hole classification and ownership in v0.0.5
+[33m2513502[m Release v0.0.4: validate NFP/GLS search, curve clearances and cancellation
+[33mbe56888[m güncelleme
+[33m84ade18[m Fix contour nesting and corner packing; remove Firebase (v0.0.3)
+[33me5cd8ed[m[33m ([m[1;33mtag: [m[1;33mv0.0.1[m[33m)[m Release v0.0.1 with rotation modes and UI fixes
+[33m93815ed[m Create README.md
+[33m5400aee[m Remove Google Drive desktop metadata
+[33m1e7199b[m Keep Git hooks executable on Windows
+[33md10980a[m Publish site automatically from local edits
+[33m6c2892a[m Prepare standalone GitHub Pages deployment
+[33me57a6bb[m Prepare DXF app for web deployment
+[33m81076fc[m conflik çözüldü
+[33m7b09961[m ilk commit
+[33mf3b486a[m Delete .github/workflows directory
+[33meac5cb4[m GitHub Actions workflow duzenlendi
+[33m2c04f5f[m Create CNAME
+[33m78791a2[m gitignore guncellendi
+[33m2ec1c1b[m Create static.yml
+[33mea3ff9d[m ilk commit
