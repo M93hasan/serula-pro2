@@ -41,9 +41,10 @@ function App() {
     <aside className="sidebar">
       <div className="logo"><div className="logo-mark">S</div><div><strong>Serula</strong><span>Nesting Pro</span></div></div>
       <nav className="navigation">
-        <button className={navigation.panel === 'viewer' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('viewer')}>Çalışma alanı</button>
-        <button className="nav-item" onClick={() => fileInputRef.current?.click()}>DXF Yükle</button>
-        <button className={navigation.panel === 'parts' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('parts')}>Parçalar</button>
+         <button className={navigation.panel === 'viewer' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('viewer')}>Çalışma alanı</button>
+         <button className="nav-item" onClick={() => fileInputRef.current?.click()}>DXF Yükle</button>
+         <button className="nav-item primary" onClick={() => { if(entities.length) navigate('settings'); else fileInputRef.current?.click(); }}>Yerleşimi Başlat</button>
+         <button className={navigation.panel === 'parts' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('parts')}>Parçalar</button>
         <button className={navigation.panel === 'settings' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('settings')}>Ayarlar</button>
         <button className={navigation.panel === 'export' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('export')}>DXF Kaydet</button>
       </nav>
