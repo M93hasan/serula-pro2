@@ -1768,6 +1768,11 @@ export default function DxfViewer({
       };
 
       try {
+        console.log("NESTING STARTING WITH SETTINGS:", {
+          ...operatorSettings,
+          spacing: partSpacing,
+          partsCount: requestedParts.length
+        });
         worker.postMessage(request);
       } catch (error) {
         setIsNesting(false);
