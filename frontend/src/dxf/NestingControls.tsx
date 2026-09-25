@@ -240,8 +240,20 @@ export default function NestingControls(props: Props) {
               yapılmaz.
             </p>
 
-            <div className="settings-footer">
-              <div className="rotation-group">
+             <div className="settings-footer">
+               <button 
+                 className="primary-action-button" 
+                 disabled={props.busy} 
+                 onClick={() => {
+                   // This is a trick to trigger the nesting process from within the settings panel
+                   // Since we are in the 'settings' panel, we just need to notify the parent to start
+                   const event = new CustomEvent('start-nesting');
+                   window.dispatchEvent(event);
+                 }}
+               >
+                 {props.busy ? 'Hesaplanıyor...' : 'YERLEŞİMİ BAŞLAT'}
+               </button>
+               <div className="rotation-group">
                 <span id="rotation-label">İzin verilen dönüşler</span>
                 <div role="radiogroup" aria-labelledby="rotation-label">
                   {[
