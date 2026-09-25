@@ -56,7 +56,7 @@ export default function NestingControls(props: Props) {
   /* =====================================================
      SEKME BAŞLIKLARI
   ===================================================== */
-  const tabs: { id: WorkspacePanel; label: string; icon: JSX.Element }[] = [
+  const tabs: { id: WorkspacePanel; label: string; icon: React.ReactNode }[] = [
     {
       id: 'settings',
       label: 'Yerleşim ayarları',
