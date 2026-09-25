@@ -1,6 +1,6 @@
 {
   "name": "serula-nesting-pro",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Serula Nesting Pro - Web tabanlı DXF nesting ve malzeme optimizasyon uygulaması",
   "private": true,
   "workspaces": [
