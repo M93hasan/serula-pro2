@@ -41,18 +41,18 @@ function App() {
     <aside className="sidebar">
       <div className="logo"><div className="logo-mark">S</div><div><strong>Serula</strong><span>Nesting Pro</span></div></div>
       <nav className="navigation">
-         <button className={navigation.panel === 'viewer' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('viewer')}>Çalışma alanı</button>
-         <button className="nav-item" onClick={() => fileInputRef.current?.click()}>DXF Yükle</button>
-         <button className="nav-item primary" onClick={() => { if(entities.length) navigate('settings'); else fileInputRef.current?.click(); }}>Yerleşimi Başlat</button>
-         <button className={navigation.panel === 'parts' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('parts')}>Parçalar</button>
+        <button className={navigation.panel === 'viewer' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('viewer')}>Çalışma alanı</button>
+        <button className="nav-item" onClick={() => fileInputRef.current?.click()}>DXF Yükle</button>
+        <button className="nav-item primary" onClick={() => { if(entities.length) navigate('settings'); else fileInputRef.current?.click(); }}>Yerleşimi Başlat</button>
+        <button className={navigation.panel === 'parts' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('parts')}>Parçalar</button>
         <button className={navigation.panel === 'settings' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('settings')}>Ayarlar</button>
         <button className={navigation.panel === 'export' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('export')}>DXF Kaydet</button>
       </nav>
     </aside>
     <main className="main-content">
       <header className="topbar"><div className="topbar-title"><span className="version-badge">v{version}</span><h1>DXF Yerleşim</h1></div><button className="new-project-button" disabled={isLoading} onClick={() => fileInputRef.current?.click()}>{isLoading ? 'İşleniyor…' : 'DXF Yükle'}</button><input ref={fileInputRef} type="file" accept=".dxf" onChange={handleFileChange} hidden /></header>
-       {error && <div className="app-error" role="alert">{error}</div>}
-       {entities.length ? <DxfViewer key={`${projectId}:${loadVersion}`} navigation={navigation} fileName={fileName} entities={entities} savedLayout={savedLayout} /> : <section className="welcome-card"><div className="welcome-text"><h2 style={{ color: '#666' }}>Lütfen bir DXF dosyası yükleyin</h2><p>Çalışma alanını görmek için sol menüdeki "DXF Yükle" butonunu kullanın.</p></div></section>}
+      {error && <div className="app-error" role="alert">{error}</div>}
+      <DxfViewer key={`${projectId}:${loadVersion}`} navigation={navigation} fileName={fileName} entities={entities} savedLayout={savedLayout} />
     </main>
   </div>;
 }

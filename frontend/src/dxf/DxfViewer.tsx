@@ -228,15 +228,9 @@ export default function DxfViewer({
     if (navigation?.token && navigation.panel !== "viewer") setPanel(navigation.panel);
   }
   useEffect(() => {
-    const handleStart = () => {
-      if (entities.length) {
-        // Use the function defined below
-        // @ts-ignore
-        handleAutoNesting();
-      }
-    };
-    window.addEventListener('start-nesting', handleStart);
-    return () => window.removeEventListener('start-nesting', handleStart);
+    if (entities.length > 0) {
+      handleAutoNesting();
+    }
   }, [entities]);
 
   const [view, setView] =
