@@ -211,7 +211,7 @@ export function createPartInstances(parts: NestingPart[], preserveOrder = false)
 export function runNesting(parts: NestingPart[], settings: NestingSettings = DEFAULT_NESTING_SETTINGS, options: { preserveOrder?: boolean; searchStep?: number; candidateLimit?: number } = {}): NestingResult {
   validateSettings(settings);
   if (options.searchStep !== undefined && (!Number.isFinite(options.searchStep) || options.searchStep <= 0)) throw new Error('Arama adımı pozitif olmalı.');
-  const sortedParts = options.preserveOrder ? parts : [...parts].sort((a, b) => {
+  const sortedParts = preserveOrder ? parts : [...parts].sort((a, b) => {
     const areaA = calculateAbsoluteArea(a.outerContour.points) - a.holes.reduce((sum, hole) => sum + calculateAbsoluteArea(hole.points), 0);
     const areaB = calculateAbsoluteArea(b.outerContour.points) - b.holes.reduce((sum, hole) => sum + calculateAbsoluteArea(hole.points), 0);
     return areaB - areaA;

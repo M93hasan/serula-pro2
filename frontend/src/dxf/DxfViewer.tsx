@@ -1782,6 +1782,16 @@ export default function DxfViewer({
     [parts, nestingWorkerRef, isNesting, geometry, operatorSettings, partSpacing]
   );
 
+  useEffect(() => {
+    const handleStartNestingEvent = () => {
+      handleAutoNesting();
+    };
+    window.addEventListener('start-nesting', handleStartNestingEvent);
+    return () => {
+      window.removeEventListener('start-nesting', handleStartNestingEvent);
+    };
+  }, [handleAutoNesting]);
+
   /* =======================================================
      RESET NESTING
   ======================================================= */

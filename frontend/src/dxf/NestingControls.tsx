@@ -22,6 +22,7 @@ type Props = {
   onFull: (id: string) => void;
   unplacedCount: number;
   onExport: (format: 'dxf') => void;
+  onStartNesting: () => void;
 };
 
 export default function NestingControls(props: Props) {
@@ -241,15 +242,10 @@ export default function NestingControls(props: Props) {
             </p>
 
              <div className="settings-footer">
-               <button 
-                 className="primary-action-button" 
-                 disabled={props.busy} 
-                 onClick={() => {
-                   // This is a trick to trigger the nesting process from within the settings panel
-                   // Since we are in the 'settings' panel, we just need to notify the parent to start
-                   const event = new CustomEvent('start-nesting');
-                   window.dispatchEvent(event);
-                 }}
+               <button
+                 className="primary-action-button"
+                 disabled={props.busy}
+                 onClick={() => props.onStartNesting()}
                >
                  {props.busy ? 'Hesaplanıyor...' : 'YERLEŞİMİ BAŞLAT'}
                </button>
