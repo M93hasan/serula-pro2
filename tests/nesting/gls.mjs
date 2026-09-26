@@ -70,3 +70,16 @@ const envelopePart=rect('approx',20,10,{quantity:2});envelopePart.outerContour.c
 const envelopeRun=await runGlsNesting([envelopePart],cfg,{timeBudgetMs:500,maxIterations:8});
 const envelopeValidation=validateLayout([envelopePart],cfg,envelopeRun.result);assert(envelopeValidation.minimumGap>=1.2-1e-7);assert(envelopeRun.result.placements.every(p=>p.x>=1.1-1e-7&&p.y>=1.1-1e-7));
 console.log('PASS native-curve tolerance envelope without double kerf');
+// Mixed sizes previously repeated grouped seeds and occupied 220 mm.
+// Exercise the production engine, with GLS disabled to isolate seed/settling quality.
+const mixedSizes=[[67,41],[61,55],[25,57],[49,44],[17,31],[26,51],[66,21],[29,40],[36,49],[35,41]];
+const mixedParts=mixedSizes.map(([w,h],i)=>rect(`mixed-${i}`,w,h));
+for(const materialType of ['roll','sheet'])for(const startCorner of ['bottom-left','bottom-right','top-left','top-right']){
+ const settings={...cfg,materialType,rollWidth:100,sheetWidth:100,sheetHeight:230,rotations:[0],startCorner};
+ const packed=await runGlsNesting(mixedParts,settings,{maxIterations:0,timeBudgetMs:3000});
+ assert.equal(packed.result.placedCount,mixedParts.length);
+ assert.equal(packed.result.sheetCount,1);
+ assert(packed.result.usedHeight<=217.001,`Mixed-size packing remains too long: ${packed.result.usedHeight}`);
+ validateLayout(mixedParts,settings,packed.result);
+}
+console.log('PASS mixed-size compact packing in four corners on sheets and rolls');

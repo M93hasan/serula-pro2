@@ -157,23 +157,45 @@ export async function runGlsNesting(parts:NestingPart[],requestedSettings:Nestin
   const penalties=new Map<string,number>();
   const features=(positions:Position[])=>positions.map(p=>({key:`${p.instance.instanceId}:${p.sheet}:${p.rotation}:${Math.floor(p.x/20)}:${Math.floor(p.y/20)}`,cost:1+p.sheet+(p.y+p.shape.height)/Math.max(1,height),position:p}));
   const scalar=(positions:Position[])=>{const r=resultOf(positions);return settings.materialType==='sheet'?(r.sheetCount??0)+(r.sheets?.at(-1)?.usedHeight??0)/(height+1):r.usedHeight/height;};
-  const augmented=(positions:Position[])=>scalar(positions)+0.35*groupingCost(positions)/Math.max(1,positions.length)+0.15/Math.max(1,instances.length)*features(positions).reduce((s,f)=>s+(penalties.get(f.key)??0),0);
+  // Visual grouping is a tie-breaker, not a reason to consume more material.
+  const augmented=(positions:Position[])=>scalar(positions)+1e-6*groupingCost(positions)/Math.max(1,positions.length)+0.15/Math.max(1,instances.length)*features(positions).reduce((s,f)=>s+(penalties.get(f.key)??0),0);
   publish(true);
   try {
     // Cheap feasible incumbent is insurance for short budgets/cancellation. It is
     // not called NFP: every contact is checked on the real solid before accepting.
     phase='Güvenli başlangıç';let current=await pack(instances,[],new Map(),true);keep(current);publish(true);
-    // Alternate seeds re-sort inside each similarity group so height/width sweeps
-    // never interleave unrelated parts.
+    // Keep the grouped seed, but also explore genuinely different global orders.
+    // Sorting within groups alone often repeats the same packing and leaves gaps.
     const orders=[instances,
-      [...instances].sort((a,b)=>rankOf(a)-rankOf(b)||b.part.bounds.height-a.part.bounds.height),
-      [...instances].sort((a,b)=>rankOf(a)-rankOf(b)||b.part.bounds.width-a.part.bounds.width)];
+      [...instances].sort((a,b)=>b.part.bounds.height-a.part.bounds.height||area(b.part)-area(a.part)),
+      [...instances].sort((a,b)=>b.part.bounds.width-a.part.bounds.width||area(b.part)-area(a.part)),
+      [...instances].sort((a,b)=>area(b.part)-area(a.part))];
     phase='Temas başlangıçları';seedStep=40;
     for(const order of orders.slice(1)){
       if(performance.now()-start>budget*0.3)break;
       const seed=await pack(order,[],new Map(),true);iterations++;keep(seed);
     }
     seedStep=0;
+    // Settle every piece before expensive NFP neighbourhoods. Moving only one
+    // frontier piece per GLS iteration leaves avoidable gaps on short budgets.
+    phase='Sıkıştırma';
+    let settled=[...bestPositions];
+    for(let pass=0;pass<3;pass++){
+      let changed=false;
+      const order=[...settled].sort((a,b)=>a.sheet-b.sheet||(pass%2?b.y-a.y:a.y-b.y));
+      for(const target of order){
+        await checkpoint();
+        const shifted={...target},world=settled.filter(p=>p!==target&&p.sheet===target.sheet).map(positioned);
+        for(const step of [20,5,1,0.1,0.01]){
+          while(fits(shifted.shape,shifted.x,shifted.y-step,world,width,height,settings)){shifted.y-=step;await checkpoint();}
+          while(fits(shifted.shape,shifted.x-step,shifted.y,world,width,height,settings)){shifted.x-=step;await checkpoint();}
+        }
+        if(shifted.x!==target.x||shifted.y!==target.y){
+          settled=settled.map(p=>p===target?shifted:p);changed=true;keep(settled);
+        }
+      }
+      if(!changed)break;
+    }
     // Reserve most time for GLS rather than spending the entire budget on seeds.
     for(const order of orders){
       phase='NFP / BLF başlangıcı';phaseDeadline=Math.min(start+budget*0.45,performance.now()+budget*0.12);
