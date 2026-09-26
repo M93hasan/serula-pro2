@@ -227,11 +227,7 @@ export default function DxfViewer({
     setLastNavigation(navigation);
     if (navigation?.token && navigation.panel !== "viewer") setPanel(navigation.panel);
   }
-  useEffect(() => {
-    if (entities.length > 0) {
-      handleAutoNesting();
-    }
-  }, [entities]);
+  const autoNestedEntities = useRef<typeof entities | null>(null);
 
   const [view, setView] =
     useState<ViewState>({
@@ -1783,6 +1779,15 @@ export default function DxfViewer({
   );
 
   useEffect(() => {
+    if (entities.length === 0 || autoNestedEntities.current === entities || isNesting || !nestingWorkerRef.current) return;
+    const timer = window.setTimeout(() => {
+      autoNestedEntities.current = entities;
+      handleAutoNesting();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [entities, handleAutoNesting, isNesting]);
+
+  useEffect(() => {
     const handleStartNestingEvent = () => {
       handleAutoNesting();
     };
@@ -1957,6 +1962,7 @@ export default function DxfViewer({
     >
       {/* TOOLBAR */}
       <NestingControls panel={panel} onPanel={setPanel} settings={operatorSettings} onSettings={setOperatorSettings}
+        onStartNesting={() => handleAutoNesting()}
         spacing={partSpacing} onSpacing={setPartSpacing} autoSimulation={autoSimulation} onAutoSimulation={setAutoSimulation}
         parts={catalogue} quantities={quantities} onQuantity={(id, value) => setQuantities(current => ({ ...current, [id]: value }))}
         onAllQuantities={value => setQuantities(Object.fromEntries(catalogue.map(part => [part.id, value])))} busy={isNesting}

@@ -1,105 +1,34 @@
-Serula Pro 2 🚀
+﻿# Serula Nesting Pro
 
-A next-generation, high-performance application designed for modern workflows.
+DXF dosyalarını görüntülemek, gerçek konturlarla yerleştirmek ve yerleşimi DXF olarak dışa aktarmak için React ve TypeScript uygulaması.
 
-📖 About / Hakkında
+## Kurulum
 
-Serula Pro 2 is a robust software solution built to streamline efficiency, offering advanced features, clean architecture, and a seamless user experience. Whether you're scaling up your development pipeline or looking for a reliable toolset, Serula Pro 2 provides the performance and flexibility you need.
+Node.js 22 veya üzeri ve npm gerekir.
 
-(Bu proje, modern iş akışlarını optimize etmek ve yüksek performanslı çözümler sunmak amacıyla geliştirilmiştir.)
+```sh
+npm ci
+npm run dev
+```
 
-✨ Features / Özellikler
+## Doğrulama
 
-High Performance: Optimized core architecture for speed and efficiency.
+```sh
+npm test
+npm --workspace frontend run lint
+npm run build
+```
 
-Modern Tech Stack: Built with cutting-edge technologies and best coding practices.
+Testler konturları, delikleri, dönüş kısıtlarını, parça mesafelerini, worker işlemlerini ve DXF dışa aktarımını denetler. Üretim çıktısı `frontend/dist` klasöründedir.
 
-Scalable Design: Easily extendable for custom plugins, modules, or integrations.
+## Yayın
 
-User-Friendly Interface: Intuitive design focused on developer and user experience.
+```sh
+npm run deploy:site
+```
 
-Cross-Platform Support: Runs seamlessly across multiple environments.
+Komut üretim derlemesini oluşturur ve `M93hasan/serula-pro2` deposunun `gh-pages` dalına gönderir. Depoya Git yazma erişimi gerekir. Yayın adresi: https://serula.site.
 
-🛠️ Tech Stack / Kullanılan Teknolojiler
+## Lisans
 
-Language: (e.g., JavaScript, TypeScript, Python, etc.)
-
-Framework: (e.g., React, Node.js, FastAPI, etc.)
-
-Tools & Utilities: Git, Docker, etc.
-
-🚀 Getting Started / Başlangıç
-
-To get a local copy up and running, follow these simple steps.
-
-Prerequisites / Ön Koşullar
-
-Make sure you have the following installed on your system:
-
-[Node.js / Python / Go etc.] (e.g., Node.js >= 18.x)
-
-Git
-
-Installation / Kurulum
-
-Clone the repository:
-
-git clone https://github.com/M93hasan/serula-pro2.git
-
-
-Navigate to the project directory:
-
-cd serula-pro2
-
-
-Install dependencies:
-
-# Example command
-npm install
-
-
-Configure environment variables (if applicable):
-
-cp .env.example .env
-
-
-Run the application:
-
-# Example command
-npm run start
-
-
-💡 Usage / Kullanım
-
-Provide instructions or code snippets on how to use Serula Pro 2 effectively:
-
-// Example usage snippet
-import { SerulaPro } from 'serula-pro2';
-
-const app = new SerulaPro();
-app.init();
-
-
-🤝 Contributing / Katkıda Bulunma
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
-
-Fork the Project
-
-Create your Feature Branch (git checkout -b feature/AmazingFeature)
-
-Commit your Changes (git commit -m 'Add some AmazingFeature')
-
-Push to the Branch (git push origin feature/AmazingFeature)
-
-Open a Pull Request
-
-📜 License / Lisans
-
-Distributed under the MIT License. See LICENSE for more information.
-
-📬 Contact / İletişim
-
-GitHub: @M93hasan
-
-Project Link: https://github.com/M93hasan/serula-pro2
+Proprietary — paket yapılandırmasında belirtildiği üzere özel mülkiyetli yazılım.

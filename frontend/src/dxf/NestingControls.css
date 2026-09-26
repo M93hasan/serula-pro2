@@ -180,7 +180,7 @@
 
 .setting-field > input:hover,
 .unit-input:hover,
-.setting-// la set-field select:hover {
+.setting-field select:hover {
   border-color: var(--nc-border-strong);
 }
 

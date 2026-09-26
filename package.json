@@ -12,7 +12,6 @@
     "build": "npm run build:frontend",
     "build:frontend": "npm --workspace frontend run build",
     "deploy:site": "node scripts/deploy-pages.mjs",
-    "watch:site": "node scripts/watch-site.mjs",
     "test": "npm run test:contours && npm run test:gls && npm run test:cavities && npm run test:rotation && npm run test:nesting && npm run test:export && npm run test:native",
     "test:nesting": "node --import ./tests/nesting/register.mjs tests/nesting/verify.mjs",
     "test:export": "node --import ./tests/nesting/register.mjs tests/nesting/export.mjs && node --import ./tests/nesting/register.mjs tests/nesting/export-primitives.mjs && node --import ./tests/nesting/register.mjs tests/nesting/dxf-structure.mjs",
