@@ -21,6 +21,10 @@ try {
   }
   git("clone", "--branch", "gh-pages", "--single-branch", repo, ".");
 
+  // Google Cloud Shell gibi geçici ortamlarda Git kimlik hatasını önlemek için yerel bilgileri tanımla
+  git("config", "user.name", "Serula Deploy Bot");
+  git("config", "user.email", "deploy-bot@serula.site");
+
   for (const name of readdirSync(temp)) {
     if (name !== ".git" && name !== "CNAME") {
       rmSync(join(temp, name), { recursive: true, force: true });

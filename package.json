@@ -32,9 +32,15 @@
     "node": ">=22"
   },
   "devDependencies": {
+    "autoprefixer": "^10.6.1",
     "concurrently": "^10.0.5"
   },
   "dependencies": {
     "react": "^19.3.0"
-  }
+  },
+  "browserslist": [
+    "> 0.5%",
+    "last 2 versions",
+    "not dead"
+  ]
 }

@@ -1076,7 +1076,7 @@ export default function DxfViewer({
     );
 
     ctx.fillStyle =
-      "#f3f3f5";
+      "rgba(245, 245, 247, 0.8)";
 
     ctx.fillRect(
       0,
@@ -1097,7 +1097,7 @@ export default function DxfViewer({
       ctx.beginPath();
 
       ctx.strokeStyle =
-        "rgba(0,0,0,0.04)";
+        "rgba(0, 0, 0, 0.03)";
 
       ctx.lineWidth = 1;
 
@@ -1940,26 +1940,7 @@ export default function DxfViewer({
   ======================================================= */
 
   return (
-    <div className="viewer-shell"
-      style={{
-        width: "100%",
-
-        borderRadius:
-          "22px",
-
-        overflow:
-          "hidden",
-
-        border:
-          "1px solid rgba(0,0,0,0.08)",
-
-        background:
-          "#fff",
-
-        boxShadow:
-          "0 15px 45px rgba(0,0,0,0.06)",
-      }}
-    >
+    <div className="viewer-shell">
       {/* TOOLBAR */}
       <NestingControls panel={panel} onPanel={setPanel} settings={operatorSettings} onSettings={setOperatorSettings}
         onStartNesting={() => handleAutoNesting()}
@@ -2012,10 +1993,13 @@ export default function DxfViewer({
             "9px 12px",
 
           background:
-            "rgba(255,255,255,0.94)",
+            "rgba(255, 255, 255, 0.25)",
+
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
 
           borderBottom:
-            "1px solid rgba(0,0,0,0.07)",
+            "1px solid rgba(0, 0, 0, 0.05)",
         }}
       >
         <div
@@ -2272,7 +2256,7 @@ export default function DxfViewer({
                 "10px 15px 8px",
 
               background:
-                "rgba(0,122,255,0.055)",
+                "rgba(168, 85, 247, 0.08)",
             }}
           >
             <div>
@@ -2280,6 +2264,7 @@ export default function DxfViewer({
                 style={{
                   fontSize:
                     "13px",
+                  color: "#5b21b6",
                 }}
               >
                 {simulationFinished
@@ -2296,7 +2281,7 @@ export default function DxfViewer({
                   "12px",
 
                 color:
-                  "#666",
+                  "#6d28d9",
               }}
             >
               %{progress.toFixed(
@@ -2316,7 +2301,7 @@ export default function DxfViewer({
                 "100%",
 
               background:
-                "rgba(0,122,255,0.10)",
+                "rgba(168, 85, 247, 0.12)",
             }}
           >
             <div
@@ -2328,7 +2313,7 @@ export default function DxfViewer({
                   `${progress}%`,
 
                 background:
-                  "#007aff",
+                  "linear-gradient(90deg, #6366f1 0%, #a855f7 100%)",
 
                 transition:
                   "width 120ms ease",
@@ -2502,16 +2487,19 @@ function ResultItem({
 
 const primaryButtonStyle: React.CSSProperties = {
   border:
-    "1px solid rgba(0,100,255,0.15)",
+    "1px solid rgba(255, 255, 255, 0.6)",
 
   borderRadius:
-    "11px",
+    "12px",
 
   padding:
-    "9px 14px",
+    "4px 10px",
+
+  fontSize:
+    "11px",
 
   background:
-    "linear-gradient(180deg, #1687ff 0%, #0071e3 100%)",
+    "linear-gradient(135deg, rgba(79, 70, 229, 0.9) 0%, rgba(124, 58, 237, 0.9) 100%)",
 
   color:
     "#ffffff",
@@ -2523,93 +2511,132 @@ const primaryButtonStyle: React.CSSProperties = {
     700,
 
   boxShadow:
-    "0 4px 12px rgba(0,113,227,0.20)",
+    "0 4px 12px rgba(99, 102, 241, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
+
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
 };
 
 const simulationButtonStyle: React.CSSProperties = {
   border:
-    "1px solid rgba(0,122,255,0.18)",
+    "1px solid rgba(0, 0, 0, 0.08)",
 
   borderRadius:
-    "10px",
+    "12px",
 
   padding:
-    "8px 11px",
+    "4px 8px",
+
+  fontSize:
+    "11px",
 
   background:
-    "rgba(0,122,255,0.08)",
+    "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(243, 232, 255, 0.5) 100%)",
 
   color:
-    "#0066cc",
-
-  cursor:
-    "pointer",
-
-  fontWeight:
-    700,
-};
-
-const toolbarButtonStyle: React.CSSProperties = {
-  border:
-    "1px solid rgba(0,0,0,0.08)",
-
-  borderRadius:
-    "10px",
-
-  padding:
-    "8px 11px",
-
-  background:
-    "#ffffff",
+    "#4f46e5",
 
   cursor:
     "pointer",
 
   fontWeight:
     600,
+
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+
+  boxShadow:
+    "0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)",
+};
+
+const toolbarButtonStyle: React.CSSProperties = {
+  border:
+    "1px solid rgba(0, 0, 0, 0.08)",
+
+  borderRadius:
+    "12px",
+
+  padding:
+    "4px 8px",
+
+  fontSize:
+    "11px",
+
+  background:
+    "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(243, 232, 255, 0.5) 100%)",
+
+  backdropFilter: "blur(10px)",
+  WebkitBackdropFilter: "blur(10px)",
+
+  cursor:
+    "pointer",
+
+  fontWeight:
+    600,
+  color: "#4f46e5",
+
+  boxShadow:
+    "0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)",
 };
 
 const squareButtonStyle: React.CSSProperties = {
   border:
-    "1px solid rgba(0,0,0,0.08)",
+    "1px solid rgba(0, 0, 0, 0.08)",
 
   borderRadius:
-    "10px",
+    "50%",
 
   width:
-    "38px",
+    "22px",
 
   height:
-    "36px",
+    "22px",
 
   background:
-    "#ffffff",
+    "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(243, 232, 255, 0.5) 100%)",
+
+  backdropFilter: "blur(10px)",
+  WebkitBackdropFilter: "blur(10px)",
 
   cursor:
     "pointer",
 
   fontSize:
-    "18px",
+    "11px",
+  color: "#4f46e5",
+
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  boxShadow:
+    "0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)",
 };
 
 const selectStyle: React.CSSProperties = {
   height:
-    "36px",
+    "22px",
 
   border:
-    "1px solid rgba(0,0,0,0.08)",
+    "1px solid rgba(0, 0, 0, 0.08)",
 
   borderRadius:
-    "10px",
+    "11px",
 
   padding:
-    "0 10px",
+    "0 4px",
+
+  fontSize:
+    "11px",
 
   background:
-    "#ffffff",
+    "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(243, 232, 255, 0.5) 100%)",
+
+  backdropFilter: "blur(10px)",
+  WebkitBackdropFilter: "blur(10px)",
 
   color:
-    "#222",
+    "#4f46e5",
 
   cursor:
     "pointer",
@@ -2619,4 +2646,7 @@ const selectStyle: React.CSSProperties = {
 
   outline:
     "none",
+
+  boxShadow:
+    "0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.8)",
 };

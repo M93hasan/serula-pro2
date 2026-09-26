@@ -25,6 +25,21 @@ type Props = {
   onStartNesting: () => void;
 };
 
+function arePartsIdentical(a: NestingPart, b: NestingPart): boolean {
+  const eps = 0.5; // tolerans limitleri (mm)
+  const wDiff = Math.abs(a.bounds.width - b.bounds.width);
+  const hDiff = Math.abs(a.bounds.height - b.bounds.height);
+  if (wDiff > eps || hDiff > eps) return false;
+
+  const aArea = a.outerContour.absoluteArea ?? 0;
+  const bArea = b.outerContour.absoluteArea ?? 0;
+  if (Math.abs(aArea - bArea) > eps * 10) return false;
+
+  if (a.holes.length !== b.holes.length) return false;
+
+  return true;
+}
+
 export default function NestingControls(props: Props) {
   const { settings, parts, quantities, panel } = props;
   const total = parts.reduce((sum, part) => sum + (quantities[part.id] ?? 1), 0);
@@ -93,6 +108,27 @@ export default function NestingControls(props: Props) {
     },
   ];
 
+  // Geometrik olarak tamamen aynı olan parçaları grupla
+  const groupedParts: { master: NestingPart; members: NestingPart[] }[] = [];
+  parts.forEach((part) => {
+    const group = groupedParts.find((g) => arePartsIdentical(g.master, part));
+    if (group) {
+      group.members.push(part);
+    } else {
+      groupedParts.push({ master: part, members: [part] });
+    }
+  });
+
+  const setGroupQuantity = (members: NestingPart[], newVal: number) => {
+    const n = members.length;
+    const base = Math.floor(newVal / n);
+    const remainder = newVal % n;
+    members.forEach((member, i) => {
+      const q = base + (i < remainder ? 1 : 0);
+      props.onQuantity(member.id, q);
+    });
+  };
+
   return (
     <section className="nesting-controls" id="workspace-controls">
       {/* =================================================
@@ -102,6 +138,7 @@ export default function NestingControls(props: Props) {
         <div>
           <div className="section-kicker">Çalışma Alanı</div>
           <h2 style={{ display: 'none' }}>Yerleşim v0.0.9</h2>
+          <h2 style={{ display: 'none' }}>Yerleşim v0.0.10</h2>
         </div>
         <span className="job-badge">
           <i />
@@ -324,13 +361,15 @@ export default function NestingControls(props: Props) {
             </div>
 
             <div className="part-catalogue">
-              {parts.map((part, index) => {
-                const quantity = quantities[part.id] ?? 1;
-                const { minX, minY, width, height } = part.bounds;
+              {groupedParts.map((group, index) => {
+                const { master, members } = group;
+                const quantity = members.reduce((sum, m) => sum + (quantities[m.id] ?? 1), 0);
+                const { minX, minY, width, height } = master.bounds;
+                const isExcluded = quantity === 0;
                 return (
                   <article
-                    className={`part-card ${quantity === 0 ? 'excluded' : ''}`}
-                    key={part.id}
+                    className={`part-card ${isExcluded ? 'excluded' : ''}`}
+                    key={master.id}
                   >
                     <div className="part-thumbnail">
                       <svg
@@ -338,7 +377,7 @@ export default function NestingControls(props: Props) {
                         aria-label={`P${index + 1} önizleme`}
                       >
                         <polygon
-                          points={part.outerContour.points
+                          points={master.outerContour.points
                             .map((p) => `${p.x},${p.y}`)
                             .join(' ')}
                           fill="#e8eefc"
@@ -355,12 +394,17 @@ export default function NestingControls(props: Props) {
                         {width.toFixed(1)} × {height.toFixed(1)} mm
                       </small>
                       <span>{quantity === 0 ? 'Yerleşim dışında' : `${quantity} adet`}</span>
+                      {members.length > 1 && (
+                        <span style={{ fontSize: '10px', color: 'var(--nc-text-subtle)', marginTop: '2px' }}>
+                          ({members.length} benzer çizim gruplandı)
+                        </span>
+                      )}
                     </div>
 
                     <button
                       className="full-button"
                       disabled={props.busy}
-                      onClick={() => props.onFull(part.id)}
+                      onClick={() => props.onFull(master.id)}
                     >
                       Full · Plakayı doldur
                     </button>
@@ -369,7 +413,10 @@ export default function NestingControls(props: Props) {
                       <button
                         aria-label={`P${index + 1} azalt`}
                         disabled={props.busy || quantity === 0}
-                        onClick={() => props.onQuantity(part.id, quantity - 1)}
+                        onClick={() => {
+                          const newVal = Math.max(0, quantity - 1);
+                          setGroupQuantity(members, newVal);
+                        }}
                       >
                         −
                       </button>
@@ -383,14 +430,17 @@ export default function NestingControls(props: Props) {
                         onChange={(event) => {
                           const value = Number(event.target.value);
                           if (Number.isInteger(value) && value >= 0 && value <= 1000) {
-                            props.onQuantity(part.id, value);
+                            setGroupQuantity(members, value);
                           }
                         }}
                       />
                       <button
                         aria-label={`P${index + 1} artır`}
                         disabled={props.busy || quantity === 1000}
-                        onClick={() => props.onQuantity(part.id, quantity + 1)}
+                        onClick={() => {
+                          const newVal = Math.min(1000, quantity + 1);
+                          setGroupQuantity(members, newVal);
+                        }}
                       >
                         +
                       </button>

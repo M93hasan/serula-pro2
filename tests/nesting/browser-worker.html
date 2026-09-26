@@ -1,4 +1,4 @@
-﻿<!doctype html><html lang="en"><meta charset="UTF-8"><title>Nesting Worker integration check</title><h1>Worker integration check</h1><button id="run">Run synthetic job</button><button id="stop">Stop and preserve best</button><p id="heartbeat"></p><pre id="status">Ready</pre><script type="module">
+﻿<!doctype html><html lang="en"><meta charset="UTF-8"><title>Nesting Worker integration check</title><h1>Worker integration check</h1><button id="run" style="width: 120px;">Run synthetic job</button><button id="stop" style="width: 120px;">Stop and preserve best</button><p id="heartbeat"></p><pre id="status">Ready</pre><script type="module">
 import {validateLayout} from '/src/nesting/validateLayout.ts';
 const worker=new Worker(new URL('/src/nesting/nesting.worker.ts',import.meta.url),{type:'module'});
 const part={id:'synthetic',name:'synthetic',quantity:60,bounds:{minX:0,minY:0,maxX:40,maxY:30,width:40,height:30},outerContour:{closed:true,points:[{x:0,y:0},{x:40,y:0},{x:40,y:10},{x:10,y:10},{x:10,y:30},{x:0,y:30}]},holes:[]};
@@ -9,4 +9,3 @@ worker.onerror=e=>document.getElementById('status').textContent='FAIL '+e.messag
 document.getElementById('run').onclick=()=>worker.postMessage({type:'RUN_NESTING',parts:[part],settings});
 document.getElementById('stop').onclick=()=>worker.postMessage({type:'STOP_NESTING'});
 </script></html>
-
