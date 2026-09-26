@@ -26,3 +26,24 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .app-error { padding: 12px; margin-bottom: 10px; color: #fecaca; background: #45232b; border: 1px solid #894052; border-radius: 6px; }
 @media (max-width: 900px) { .sidebar { width: 155px; padding: 18px 8px; } .main-content { padding: 0 10px 10px; } }
 @media (max-width: 650px) { .app { display: block; } .sidebar { width: 100%; padding: 10px; border-right: 0; border-bottom: 1px solid #2a3544; } .logo { padding: 0 4px 10px; } .navigation { flex-direction: row; overflow-x: auto; gap: 4px; } .nav-item { width: auto; white-space: nowrap; padding: 8px; font-size: 12px; } .nav-item.primary { margin: 0; } .topbar { min-height: 60px; } }
+
+/* Professional drafting workspace */
+:root { background: #0c1016; color: #e8edf4; }
+body { background: #0c1016; }
+.sidebar { width: 208px; padding: 28px 14px; background: #111720; border-color: #26303d; }
+.logo { padding: 0 10px 30px; }
+.logo strong { font-size: 21px; letter-spacing: -.7px; }
+.logo span { letter-spacing: 2px; text-transform: uppercase; font-size: 9px; }
+.navigation { gap: 8px; }
+.nav-item { padding: 12px 14px; border-radius: 7px; color: #a9b4c4; }
+.nav-item.active { background: #1c293a; border-color: #344962; color: #d3e5ff; box-shadow: inset 3px 0 #72a8ed; }
+.nav-item.primary { background: #376caa; margin: 12px 0; border-color: #4c83c1; }
+.main-content { padding: 0 24px 24px; }
+.topbar { min-height: 82px; border-bottom: 1px solid #26303d; margin-bottom: 20px; }
+.topbar-title strong { font-size: 17px; letter-spacing: -.3px; }
+.topbar-title span { margin-top: 6px; color: #9caabc; }
+.new-project-button { padding: 10px 16px; background: #1b2737; border-color: #3b506a; }
+@media(max-width:900px) { .sidebar { width: 168px; padding: 20px 10px; } .main-content { padding: 0 12px 12px; } }
+@media(max-width:650px) { .sidebar { width:100%; padding:12px; } .logo { padding-bottom:12px; } .navigation { gap:4px; } .nav-item { padding:10px; } .nav-item.primary { margin:0; } .topbar { min-height:72px; margin-bottom:12px; } }
+
+.version-badge { display:inline-block; margin-left:10px; padding:3px 7px; border:1px solid #34445a; border-radius:4px; color:#afc4de; font-size:10px; font-weight:500; vertical-align:middle; }

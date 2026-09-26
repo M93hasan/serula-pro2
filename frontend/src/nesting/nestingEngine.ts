@@ -2,7 +2,7 @@ import type { DxfPoint, NestingPart } from '../dxf/dxfTypes';
 import { calculateAbsoluteArea, pointInPolygon } from '../dxf/contourEngine';
 
 export type StartCorner = 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
-export const ANY_ROTATIONS = Array.from({ length: 72 }, (_, index) => index * 5);
+export { ANY_ROTATIONS } from './rotationPolicy';
 export interface NestingSettings {
   materialType: 'sheet' | 'roll';
   sheetWidth: number; sheetHeight: number; rollWidth: number;

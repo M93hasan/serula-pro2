@@ -5,6 +5,7 @@ import { normalizeDxfEntities } from './dxf/dxfNormalizer';
 import type { SerulaDxfEntity } from './dxf/dxfTypes';
 import logoImg from '../../logo.png';
 import './App.css';
+import { version } from '../package.json';
 
 function App() {
   const [navigation, setNavigation] = useState<{ panel: 'viewer' | 'settings' | 'parts' | 'export'; token: number }>({ panel: 'viewer', token: 0 });
@@ -57,7 +58,7 @@ function App() {
       </nav>
     </aside>
     <main className="main-content">
-      <header className="topbar"><div className="topbar-title"><strong>Yerleşim çalışma alanı</strong><span>{fileName || 'Başlamak için bir DXF dosyası yükleyin'}</span></div><button className="new-project-button" disabled={isLoading} onClick={() => fileInputRef.current?.click()}>{isLoading ? 'İşleniyor…' : '+ DXF Yükle'}</button><input ref={fileInputRef} type="file" accept=".dxf" onChange={handleFileChange} hidden /></header>
+      <header className="topbar"><div className="topbar-title"><strong>Yerleşim çalışma alanı <small className="version-badge">v{version}</small></strong><span>{fileName || 'Başlamak için bir DXF dosyası yükleyin'}</span></div><button className="new-project-button" disabled={isLoading} onClick={() => fileInputRef.current?.click()}>{isLoading ? 'İşleniyor…' : '+ DXF Yükle'}</button><input ref={fileInputRef} type="file" accept=".dxf" onChange={handleFileChange} hidden /></header>
       {error && <div className="app-error" role="alert">{error}</div>}
       <DxfViewer key={`${projectId}:${loadVersion}`} navigation={navigation} fileName={fileName} entities={entities} savedLayout={savedLayout} />
     </main>

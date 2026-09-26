@@ -842,3 +842,36 @@
 .result-metrics span { margin-bottom: 4px; font-size: 10px; }
 .viewer-shell > progress { width: 100%; height: 5px; accent-color: #3b82f6; }
 @media (max-width: 650px) { .settings-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .nesting-controls { padding: 10px; } .result-metrics { gap: 12px; } .result-metrics > div { padding-right: 8px; } }
+
+/* Quiet surfaces and compact precision controls. */
+:root { --nc-bg: #121922; --nc-bg-panel: #18212d; --nc-bg-subtle: #1e2a38; --nc-bg-hover: #243345; --nc-border: #2c3949; --nc-border-strong: #51657f; --nc-primary: #79aff0; --nc-primary-hover: #9bc6fa; --nc-primary-soft: #243b56; --nc-text-muted: #b0bdcd; --nc-text-subtle: #9eafc3; --nc-shadow-sm: none; --nc-shadow-md: 0 4px 16px #0002; --nc-radius-lg: 8px; }
+.nesting-controls { padding:20px; }
+.controls-heading { margin-bottom:16px; }
+.controls-heading h2 { font-size:20px; font-weight:600; }
+.section-kicker { color:#9eafc3; font-size:9px; letter-spacing:2px; }
+.job-badge { border-radius:5px; font-size:11px; }
+.job-badge i { box-shadow:none; }
+.controls-tabs { gap:16px; }
+.controls-tabs button { border-bottom-width:2px; border-radius:0; }
+.controls-tabs button[aria-selected="true"] { background:transparent; color:#cce2ff; }
+.settings-grid { gap:14px; }
+.setting-field { gap:6px; font-size:11px; }
+.setting-field > input, .unit-input, .setting-field select { height:36px; border-radius:5px; background:#0f1620; box-shadow:none; }
+.unit-input input { font-size:13px; font-variant-numeric:tabular-nums; }
+.rotation-group > div { gap:4px; margin-top:8px; }
+.rotation-chip { border-radius:5px; min-height:32px; padding:5px 14px; }
+.rotation-chip.selected { background:#29486d; color:#e5f0ff; border-color:#6396d4; box-shadow:none; }
+.rotation-chip input { display:block; position:absolute; opacity:0; width:1px; height:1px; }
+.rotation-chip:focus-within { outline:2px solid #9bc6fa; outline-offset:2px; }
+.rotation-description { margin-top:7px; }
+.part-catalogue { gap:10px; }
+.part-card { padding:12px; gap:10px; }
+.part-card:hover, .export-card:hover:enabled { transform:none; box-shadow:none; }
+.viewer-toolbar { padding:10px 14px !important; gap:8px !important; }
+.viewer-toolbar button, .viewer-toolbar select { height:32px !important; padding:0 12px !important; border-radius:5px !important; font-size:12px !important; box-shadow:none !important; }
+.viewer-toolbar .quick-export, .primary-action-button, .viewer-shell > button { background:#376caa !important; border-color:#4c83c1 !important; color:white !important; }
+.viewer-shell { border-radius:10px; }
+.viewer-dimensions { font-variant-numeric:tabular-nums; font-weight:500; }
+.result-dashboard { padding:16px 20px; background:#151e29; }
+.result-metrics strong { font-size:24px; font-weight:600; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+@media(max-width:650px) { .nesting-controls { padding:12px; } .controls-heading { flex-wrap:wrap; gap:8px; } .part-catalogue { grid-template-columns:1fr; } .viewer-toolbar button { min-height:38px !important; } }

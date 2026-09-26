@@ -1,3 +1,4 @@
+import { isFreeRotation, ROTATION_STEP } from './rotationPolicy';
 import Clipper from 'clipper-lib';
 import type { NestingPart } from '../dxf/dxfTypes';
 import { calculateAbsoluteArea } from '../dxf/contourEngine';
@@ -14,7 +15,7 @@ export type SearchOutcome=SearchProgress & {stopped:boolean;validation:ReturnTyp
 class SearchStopped extends Error {}
 class PhaseExpired extends Error {}
 const area=(p:NestingPart)=>calculateAbsoluteArea(p.outerContour.points)-p.holes.reduce((s,h)=>s+calculateAbsoluteArea(h.points),0);
-const isFree=(settings:NestingSettings)=>settings.rotations.length===72&&settings.rotations.every((a,i)=>a===i*5);
+const isFree=(settings:NestingSettings)=>isFreeRotation(settings.rotations);
 function allowed(part:NestingPart,settings:NestingSettings){const angles=isFree(settings)&&part.allowedRotations?part.allowedRotations:settings.rotations;return angles.filter(r=>(!part.lockDirection||r===0)&&(!part.allowedRotations||part.allowedRotations.includes(r)));}
 const positioned=(p:Position)=>({...p.shape,x:p.x,y:p.y,points:p.shape.points.map(q=>({x:q.x+p.x,y:q.y+p.y})),holes:p.shape.holes.map(h=>h.map(q=>({x:q.x+p.x,y:q.y+p.y})))});
 
@@ -137,10 +138,20 @@ export async function runGlsNesting(parts:NestingPart[],requestedSettings:Nestin
         chosen=await find(instance,positions,sheet,height,angles,quick);
         if(!chosen&&angles.length!==allAngles.length)chosen=await find(instance,positions,sheet,height,allAngles,quick);
         const occupied=positions.filter(p=>p.sheet===sheet).reduce((v,p)=>Math.max(v,p.y+p.shape.height),settings.margin);
-        if(!quick&&occupied>settings.margin&&(!chosen||chosen.y+chosen.shape.height>occupied+1e-7)){
+        if(occupied>settings.margin&&(!chosen||chosen.y+chosen.shape.height>occupied+1e-7)){
           const ownRank=rankOf(instance);
-          const small=pending.map((item,i)=>({item,i})).slice(1).sort((a,b)=>((rankOf(a.item)===ownRank?0:1)-(rankOf(b.item)===ownRank?0:1))||area(a.item.part)-area(b.item.part));
-          for(const candidate of small){const cavity=await find(candidate.item,positions,sheet,occupied+settings.margin);if(cavity){chosen=cavity;index=candidate.i;break;}}
+          // Fill the already occupied band before extending the roll. Try the
+          // largest remaining piece that fits, keeping equal-sized runs near
+          // each other without sacrificing material for visual grouping.
+          const small=pending.map((item,i)=>({item,i})).slice(1).sort((a,b)=>
+            ((rankOf(a.item)===ownRank?0:1)-(rankOf(b.item)===ownRank?0:1))||area(b.item.part)-area(a.item.part));
+          const tried=new Set<string>();
+          for(const candidate of small){
+            if(quick&&tried.has(candidate.item.part.id))continue;
+            tried.add(candidate.item.part.id);
+            const cavity=await find(candidate.item,positions,sheet,occupied+settings.margin,allowed(candidate.item.part,settings),quick);
+            if(cavity){chosen=cavity;index=candidate.i;break;}
+          }
         }
         if(chosen)break;
       }
@@ -222,7 +233,7 @@ export async function runGlsNesting(parts:NestingPart[],requestedSettings:Nestin
         if(shiftScore<neighbourScore-1e-9){neighbour=shiftTrial;neighbourScore=shiftScore;}
         let angles=allowed(target.instance.part,settings);
         if(isFree(settings)&&!target.instance.part.lockDirection&&!target.instance.part.allowedRotations){
-          const coarse=(iterations*5)%360;
+          const coarse=(iterations*ROTATION_STEP)%360;
           angles=[target.rotation,coarse,...[-2,-1,1,2].map(d=>(target.rotation+d+360)%360)];
         }
         phaseDeadline=performance.now()+Math.max(50,budget*0.05);

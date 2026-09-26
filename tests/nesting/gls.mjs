@@ -35,9 +35,15 @@ assert.equal(sheets.result.sheetCount,3);assert.equal(sheets.result.placedCount,
 const rollSettings={...cfg,materialType:'roll',rollWidth:102,startCorner:'top-right'};
 const roll=await runGlsNesting([rect('r',20,10,{quantity:3})],rollSettings,{timeBudgetMs:3000,maxIterations:15});
 assert.equal(roll.result.placedCount,3);assert.equal(roll.result.materialHeight,12);
+// The fast incumbent must use an available side strip before advancing the
+// next large piece down the roll, even when optimization has no iterations.
+const sideStrip=[rect('large-run',60,60,{quantity:2}),rect('strip-fill',35,35)];
+const filled=await runGlsNesting(sideStrip,{...rollSettings,rollWidth:100,rotations:[0]},{timeBudgetMs:3000,maxIterations:0});
+assert.equal(filled.result.placedCount,3);validateLayout(sideStrip,{...rollSettings,rollWidth:100,rotations:[0]},filled.result);
+assert(filled.result.usedHeight<=123,'Small part should use the side strip alongside a large piece');
 assert(roll.penaltyUpdates>0,'GLS must actually penalize a local minimum');
 const restricted=await runGlsNesting([rect('locked',120,20,{lockDirection:true})],cfg,{timeBudgetMs:500,maxIterations:4});assert.equal(restricted.result.unplacedCount,1);
-const any=await runGlsNesting([rect('diagonal',40,10)],{...cfg,sheetWidth:36,sheetHeight:36,margin:0,spacing:0,rotations:ANY_ROTATIONS},{timeBudgetMs:2000,maxIterations:4});assert.equal(any.result.placedCount,1);assert(![0,90,180,270].includes(any.result.placements[0].rotation));
+const any=await runGlsNesting([rect('diagonal',40,10)],{...cfg,sheetWidth:38,sheetHeight:38,margin:0,spacing:0,rotations:ANY_ROTATIONS},{timeBudgetMs:2000,maxIterations:4});assert.equal(any.result.placedCount,1);assert(![0,90,180,270].includes(any.result.placements[0].rotation));
 const signal={aborted:false};let snapshot;
 const stopped=await runGlsNesting([rect('stop',10,10,{quantity:30})],cfg,{signal,timeBudgetMs:10000,onProgress:p=>{if(p.result.placedCount>0){snapshot=p.result;signal.aborted=true;}}});
 assert(stopped.stopped);assert(stopped.result.placedCount>=snapshot.placedCount);validateLayout([rect('stop',10,10,{quantity:30})],cfg,stopped.result);

@@ -1,3 +1,4 @@
+import { matchesRotations } from '../nesting/rotationPolicy';
 import type { NestingPart } from './dxfTypes';
 import { ANY_ROTATIONS, type NestingSettings } from '../nesting/nestingEngine';
 import './NestingControls.css';
@@ -291,14 +292,14 @@ export default function NestingControls(props: Props) {
                 <div role="radiogroup" aria-labelledby="rotation-label">
                   {[
                     { label: '0°', angles: [0], hint: 'Yalnızca 0°; yön değişmez' },
-                    { label: '0°–90°', angles: [0, 90], hint: '0° veya 90°' },
-                    { label: 'Any', angles: ANY_ROTATIONS, hint: '5° örnekleme, iyi açılar çevresinde 1° ince arama' },
+                    { label: '0°–180°', angles: [0, 180], hint: '0° veya 180°' },
+                    { label: 'Her yön', angles: ANY_ROTATIONS, hint: '10° örnekleme, iyi açılar çevresinde 1° ince arama' },
                   ].map((mode) => (
                     <label
                       key={mode.label}
                       title={mode.hint}
                       className={
-                        settings.rotations.length === mode.angles.length
+                        matchesRotations(settings.rotations, mode.angles)
                           ? 'rotation-chip selected'
                           : 'rotation-chip'
                       }
@@ -307,7 +308,7 @@ export default function NestingControls(props: Props) {
                         name="rotation-mode"
                         aria-label={mode.label}
                         type="radio"
-                        checked={settings.rotations.length === mode.angles.length}
+                        checked={matchesRotations(settings.rotations, mode.angles)}
                         onChange={() =>
                           props.onSettings({ ...settings, rotations: [...mode.angles] })
                         }
@@ -318,9 +319,9 @@ export default function NestingControls(props: Props) {
                 </div>
                 <small className="rotation-description">
                   {settings.rotations.length === ANY_ROTATIONS.length
-                    ? '5° örnekleme, iyi açılar çevresinde 1° ince arama; süreyle sınırlı'
+                    ? '10° örnekleme, iyi açılar çevresinde 1° ince arama; süreyle sınırlı'
                     : settings.rotations.length === 2
-                      ? 'Yalnızca 0° ve 90°'
+                      ? 'Yalnızca 0° ve 180°'
                       : 'Parçalar döndürülmez'}
                 </small>
               </div>

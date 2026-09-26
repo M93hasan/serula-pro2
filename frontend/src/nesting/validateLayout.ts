@@ -1,3 +1,4 @@
+import { isFreeRotation } from './rotationPolicy';
 import Clipper from 'clipper-lib';
 import type { DxfPoint, NestingPart } from '../dxf/dxfTypes';
 import type { NestingResult, NestingSettings } from './nestingEngine';
@@ -58,7 +59,7 @@ export function validateLayout(parts:NestingPart[],requestedSettings:NestingSett
   const shapes=actual.map(placement=>{
     const part=map.get(placement.partId);if(!part)throw new Error('Bilinmeyen parça.');
     const angle=placement.rotation;
-    const free=settings.rotations.length===72&&settings.rotations.every((a,i)=>a===i*5);
+    const free=isFreeRotation(settings.rotations);
     if(!Number.isFinite(angle)||angle<0||angle>=360||(!free&&!settings.rotations.includes(angle))||(free&&!part.allowedRotations&&Math.abs(angle-Math.round(angle))>1e-8)||(part.lockDirection&&angle!==0)||(part.allowedRotations&&!part.allowedRotations.includes(angle)))throw new Error('Dönüş kısıtı ihlali.');
     const c=Math.cos(angle*Math.PI/180),s=Math.sin(angle*Math.PI/180);
     const rotate=(p:DxfPoint)=>({x:(p.x-part.bounds.minX)*c-(p.y-part.bounds.minY)*s,y:(p.x-part.bounds.minX)*s+(p.y-part.bounds.minY)*c});
