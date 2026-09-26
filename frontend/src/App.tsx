@@ -1,9 +1,9 @@
-﻿import { useRef, useState } from 'react';
+﻿﻿import { useRef, useState } from 'react';
 import DxfParser from 'dxf-parser';
 import DxfViewer, { type SavedLayout } from './dxf/DxfViewer';
 import { normalizeDxfEntities } from './dxf/dxfNormalizer';
 import type { SerulaDxfEntity } from './dxf/dxfTypes';
-import { version } from '../package.json';
+import logoImg from '../../../logo.png';
 import './App.css';
 
 function App() {
@@ -39,7 +39,15 @@ function App() {
   };
   return <div className="app">
     <aside className="sidebar">
-      <div className="logo"><div className="logo-mark">S</div><div><strong>Serula</strong><span>Nesting Pro</span></div></div>
+      <div className="logo">
+        <img 
+          src={logoImg} 
+          alt="Serula Logo" 
+          className="logo-img" 
+          style={{ width: '32px', height: '32px', marginRight: '10px', objectFit: 'contain', borderRadius: '50%', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} 
+        />
+        <div><strong>Serula</strong><span>Nesting Pro</span></div>
+      </div>
       <nav className="navigation">
         <button className={navigation.panel === 'viewer' ? 'nav-item active' : 'nav-item'} onClick={() => navigate('viewer')}>Çalışma alanı</button>
         <button className="nav-item" onClick={() => fileInputRef.current?.click()}>DXF Yükle</button>
@@ -50,7 +58,7 @@ function App() {
       </nav>
     </aside>
     <main className="main-content">
-      <header className="topbar"><div className="topbar-title"><span className="version-badge">v{version}</span></div><button className="new-project-button" disabled={isLoading} onClick={() => fileInputRef.current?.click()}>{isLoading ? 'İşleniyor…' : 'DXF Yükle'}</button><input ref={fileInputRef} type="file" accept=".dxf" onChange={handleFileChange} hidden /></header>
+      <header className="topbar"><div className="topbar-title"></div><button className="new-project-button" disabled={isLoading} onClick={() => fileInputRef.current?.click()}>{isLoading ? 'İşleniyor…' : 'DXF Yükle'}</button><input ref={fileInputRef} type="file" accept=".dxf" onChange={handleFileChange} hidden /></header>
       {error && <div className="app-error" role="alert">{error}</div>}
       <DxfViewer key={`${projectId}:${loadVersion}`} navigation={navigation} fileName={fileName} entities={entities} savedLayout={savedLayout} />
     </main>

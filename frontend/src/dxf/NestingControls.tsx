@@ -51,6 +51,7 @@ export default function NestingControls(props: Props) {
     title: string
   ) => (
     <label className="setting-field" key={key}>
+    <div className="setting-field" key={key}>
       <span>{title}</span>
       <div className="unit-input">
         <input
@@ -66,6 +67,7 @@ export default function NestingControls(props: Props) {
         <span>mm</span>
       </div>
     </label>
+    </div>
   );
 
   /* =====================================================
@@ -137,6 +139,7 @@ export default function NestingControls(props: Props) {
         <div>
           <div className="section-kicker">Çalışma Alanı</div>
           <h2 style={{ display: 'none' }}>Yerleşim v0.0.9</h2>
+          <h2 style={{ display: 'none' }}>Yerleşim v0.0.10</h2>
         </div>
         <span className="job-badge">
           <i />
@@ -172,6 +175,7 @@ export default function NestingControls(props: Props) {
           <fieldset disabled={props.busy} className="settings-body">
             <div className="settings-grid">
               <label className="setting-field">
+              <div className="setting-field">
                 <span>Malzeme tipi</span>
                 <select
                   aria-label="Malzeme"
@@ -187,6 +191,7 @@ export default function NestingControls(props: Props) {
                   <option value="roll">Rulo / Roll</option>
                 </select>
               </label>
+              </div>
 
               {settings.materialType === 'sheet' ? (
                 <>
@@ -200,6 +205,43 @@ export default function NestingControls(props: Props) {
               {dimension('margin', 'Kenar payı')}
 
               <label className="setting-field">
+                <span>Eğri toleransı (mm)</span>
+                <input
+                  aria-label="Eğri toleransı"
+                  type="number"
+                  min="0.001"
+                  max="5"
+                  step="0.01"
+                  value={settings.curveTolerance ?? 0.1}
+                  onChange={(event) =>
+                    props.onSettings({
+                      ...settings,
+                      curveTolerance: Number(event.target.value),
+                    })
+                  }
+                />
+              </label>
+
+              <label className="setting-field">
+                <span>Arama süresi (saniye)</span>
+                <input
+                  aria-label="Arama süresi"
+                  type="number"
+                  min="1"
+                  max="300"
+                  step="1"
+                  value={(settings.timeBudgetMs ?? 10000) / 1000}
+                  onChange={(event) =>
+                    props.onSettings({
+                      ...settings,
+                      timeBudgetMs: Number(event.target.value) * 1000,
+                    })
+                  }
+                />
+              </label>
+
+              <label className="setting-field">
+              <div className="setting-field">
                 <span>Parçalar arası mesafe</span>
                 <div className="unit-input">
                   <input
@@ -213,8 +255,10 @@ export default function NestingControls(props: Props) {
                   <span>mm</span>
                 </div>
               </label>
+              </div>
 
               <label className="setting-field">
+              <div className="setting-field">
                 <span>Başlangıç köşesi</span>
                 <select
                   aria-label="Başlangıç"
@@ -232,6 +276,7 @@ export default function NestingControls(props: Props) {
                   <option value="top-right">↗ Sağ üst</option>
                 </select>
               </label>
+              </div>
             </div>
 
             <p>
